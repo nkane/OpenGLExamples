@@ -46,3 +46,80 @@ This is just a disclaimer, the source code provided in the book was not complete
 portions of the code in order to get them working with libraries that regularly used at this particular point in time; however,
 in the future it would be nice to remove these libraries and write a basic platform specific code to handle all of the setup
 task. 
+
+For this example we are using statically compiled version of [glew][glew-lib] and [glfw][glfw-lib]. Personally, I am not too 
+familiar with these libraries at this particular point in time, so please feel free to open pull request to correct anything
+that I might be missing.
+
+Folder structure for example-1:
+```plain
+- example-1
+  - lib
+    + glew32s.lib
+    + glfw3.lib
+  + eglew.h
+  + glew.h
+  + glfw.h
+  + glfw3native.h
+  + glxew.h
+  + wglew.h
+  + main.cpp
+  + build.bat
+  + triangles.frag
+  + triangles.vert
+```
+
+MSVC build script (build.bat):
+```batch
+IF NOT EXIST .\build mkdir .\build
+pushd .\build
+
+cl -Od -MD -nologo -Zi ..\main.cpp /link -incremental:no -opt:ref /LIBPATH:..\lib glew32s.lib glfw3.lib opengl32.lib glu32.lib user32.lib gdi32.lib shell32.lib
+
+dir
+
+popd
+
+copy triangles.vert .\build
+copy trinagles.frag .\build
+```
+
+```C
+#include <iostream>
+
+#define BUFFER_OFFSET(a) ((void *) (a))
+
+void init(void);
+void display(void);
+static const GLchar* ReadShader(const char *);
+
+enum VAO_IDs
+{
+	Triangles = 0,
+	NumVAOs = 1
+};
+
+enum Buffer_IDs
+{
+	ArrayBuffer = 0,
+	NumBuffers = 1
+};
+
+enum Attrib_IDs
+{
+	vPosition = 0
+};
+
+GLuint VAOs[NumVAOs];
+GLuint Buffers[NumBuffers];
+
+const GLuint NumVertices = 6;
+
+int main(int argc, char *argv[])
+{
+	return 0;
+}
+```
+
+[glew-lib]: 	http://glew.sourceforge.net/
+[glfw-lib]:	http://www.glfw.org/
