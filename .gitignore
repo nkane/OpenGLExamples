@@ -21,9 +21,13 @@
 *.lai
 *.la
 *.a
-*.lib
+# NOTE(nick): for now, include static libraries
+#*.lib
 
 # Executables
 *.exe
 *.out
 *.app
+
+# Visual Studio Debugging
+*.pdb
