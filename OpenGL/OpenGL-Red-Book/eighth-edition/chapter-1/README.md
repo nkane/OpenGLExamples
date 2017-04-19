@@ -294,6 +294,53 @@ static const GLchar* ReadShader(const char *filename)
 	return const_cast<const GLchar *>(source);
 }
 ```
+In a nutshell, here is what the example does:
+
+* Include the appropriate header files and declare global variables and other useful programming constructs.
+* The init() function is used to set up data for use later in the program. This may be vertex information for later use when rendering primitives, or image data for use in a technique called texture mapping.
+* In the init() function, we first specify the position information for the two triangles that we render. After that, we specify shaders we are going to use in our program, load the shaders into memory, and compile them on the GPU. In this case, we only use the required vertex and fragment shaders. After each shader is compiled, it is attached to a GLProgram; additionally, after the needed shaders have been compiled and attached the GLProgram needs to be linked and then "used".
+* The display() function is what does the rendering. That is, it calls the OpenGL functions that request something to be rendered. Almost all the display() function will do the same three steps as in our sample:
+  1. Clear the window by calling glClear().
+  2. Issue the OpenGL calls required to render your object.
+  3. Request that the image is presented to the screen.
+* Finally, the main() function does the heavy lifting of creating a window, calling the init() function, and finally entering into the event loop.
+
+### OpenGL Syntax
+All the functions in the OpenGL library begin with the letters "gl", immediately followed by one or more capitalized words to name the function (glBindVertexArray() function, for example).
+All functions in OpenGL are like that; additionally, you will notice functions that beging with "glfw" that are related to the library [glfw][glfw-lib] and functions that begin with "glew"
+that are related to the library [glew][glew-lib]. Similar to OpenGL's function-naming convention, constants like "GL_COLOR_BUFFER_BIT", which you saw in the function display(), are defined
+for the OpenGL library. All constant tokens begin with "GL_", and use underscores to separate words. Their definitions are merely #defines found in the OpenGL header files: "glcorearb.h" and
+"glext.h".
+
+To aid in moving OpenGL applications between operating systems, OpenGL also defines various types of data for its functions, such as GLfloat, which is the floating-point value type we used to
+declare vertices in the example. OpenGL defines typedefs for all of the data types accepted by its functions; additionally, since OpenGL is a "C"-language library, it does not have function
+overloading to deal with the different types of data - instead it uses a function-naming convention to organize the multitude of functions that result from that situtation. For example,
+we will ecounter a function named glUniform*() in Chapter 2, "Shader Fundamentals", which comes in numerous forms, such as glUniform2f() and glUniform3fv(). The suffixes at the end of the "core"
+part of the function name provide information about the arguments passed to the function. For example, the "2" in glUniform2f() represents that two data values will be passed into the function.
+Also, note the "f" following the "2" - this indicates that those two parameters are of type GLfloat. Finally, versions of the functions name end with a "v", which is short for "vector", meaning
+that the two floating-point values (int the case of glUniform2fv()) are passed as a one-dimensional array GLfloats, instead of two separate parameters.
+
+| Suffix        | Data Type               | Typical Corresponding C-Language Type  | OpenGL Type Definition 	|
+| ------------- | ----------------------- | -------------------------------------- | -------------------------- |
+| b 		| 8-bit integer	          | signed char 			   | GLbyte		    	|
+| s 		| 16-bit integer          | signed short 		           | GLshort		    	|
+| i 		| 32-bit integer          | int	 			       	   | GLint, GLsizei         	|
+| f 		| 32-bit float-point      | float	 			   | GLfloat, GLclampf	    	|
+| d 		| 64-bit float-point      | double	 			   | GLdouble, GLclampd	    	|
+| ub 		| 8-bit unsigned integer  | unsigned char 	 		   | GLubyte		    	|
+| us 		| 16-bit unsigned integer | unsigned short 	 		   | GLushort		        |
+| ui 		| 32-bit unsigned integer | unsigned int 	 		   | GLuint, GLenum, GLbitfield |
+
+### OpenGL's Rendering Pipeline
+OpenGL implements a "rendering pipeline", which is a sequence of processing stages for converting the data your application provides to OpenGL into a final rendered image. Below is a overview
+of how OpenGL pipeline associated with Version 4.3 works:
+
+```plain
+	Vertex Data -> Vertex shader -> Tesselation Control Shader -> Tesselation Evalutation Shader ---\
+	/-----------------------------------------------------------------------------------------------|
+	V
+	Geometry Shader -> Primitive Setup -> Clipping -> Rasterization -> Fragment Shader -> "Output Image :)"
+```
 
 [glew-lib]: 	http://glew.sourceforge.net/
 [glfw-lib]:	http://www.glfw.org/
