@@ -207,4 +207,3 @@ static const GLchar* ReadShader(const char *filename)
 	return const_cast<const GLchar *>(source);
 }
 
-
