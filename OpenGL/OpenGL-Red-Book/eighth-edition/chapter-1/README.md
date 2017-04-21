@@ -336,11 +336,71 @@ OpenGL implements a "rendering pipeline", which is a sequence of processing stag
 of how OpenGL pipeline associated with Version 4.3 works:
 
 ```plain
-	Vertex Data -> Vertex shader -> Tesselation Control Shader -> Tesselation Evalutation Shader ---\
+	Vertex Data -> Vertex Shader -> Tesselation Control Shader -> Tesselation Evalutation Shader ---\
 	/-----------------------------------------------------------------------------------------------|
 	V
 	Geometry Shader -> Primitive Setup -> Clipping -> Rasterization -> Fragment Shader -> "Output Image :)"
 ```
+
+OpenGL begins with the geometric data you provide (vertices and geometric primitives) and first processes it through a sequence of shader stages: vertex shading, tessellation shading (which
+itself uses two shaders), and finally geometry shading, before it's passed to the rasterizer. The rasterizer will generate fragments for any primitive that's inside of the clipping region,
+and execute a fragment shader for each of the generated fragments; additionally, you have complete control of which shaders stages are used, and what each of them do. Not all stages are
+required - only the vertex and fragment shaders must be included. Tessellation and geometry shaders are optional.
+
+### Preparing to Send Data to OpenGL
+OpenGL requires that all data be stored in buffer objects, which are just chunks of memory managed by the OpenGL server. Populating these buffers with data can occur in numerous ways, but
+one of the most common is using the glBufferData() command.
+
+### Sending data to OpenGL
+After we have initialized our buffers, we can request geometric primitives be rendered by calling one of OpenGL's drawing commands, such as glDrawArrays(). Drawing in OpenGL usually means
+transferring vertex data to the OpenGL server.
+
+### Vertex Shading
+For each vertex that is issued by a drawing command, a vertex shader will be called to process the data associated with that vertex. Depending on whether any other pre-rasterization shaders
+are active, vertex shaders may be simple, perhaps just copying data to pass it through this shading stage, generally considered a "pass-through-shader" to a complex shader that is performing
+many computations to potentially compute the vertex's screen position (usually using transformation matrices), determining the vertex's color using lighting computations or any multitude of
+other techniques. A typical application of any complexity will have multiple vertex shaders, but only one can be active at any one time.
+
+### Tessellation Shading
+After the vertex shader has processed each vertex's associated data, the tessellation shader stage will continue processing that data, if it has been activated. Tessellation uses patchs to
+describe an object's shape, and allows relatively simple collections of patch geometry to be tessellated to increase the number of geometric primitives providing better-looking models. The
+tessellation shading stage can potentially use two shaders to manipulate the patch data and generate the final shape.
+
+### Geometry Shading
+Geometry shading, allows additional processing of individual geometric primitives, including creating new ones, before rasterization. This shading stage is also optional but powerful.
+
+### Primitive Assembly
+The previous shading stages all operate on vertices, with the information about how those vertices are organized into geometric primitives being acrried along internal to OpenGL. The
+primitive assembly stage organizes the vertices into their associated geometric primitives in preparation for clipping and rasterization.
+
+### Clipping
+Occasionally, vertices will be outside of the viewport - the region of the window where you are permitted to draw - and case the primitive associated with that vertex to be modified. 
+Meaning that none of its pixels are outside of the viewport. This operation is called clipping and it is handled automatically by OpenGL.
+
+### Rasterization
+After clipping is complete, the updated primitives are sent to the rasterizer for fragment generation. Consider a fragment a "candidate pixel", in that pixels have a home in the framebuffer,
+while a fragment still cann be rejected and never update its associated pixel location. Processing of fragments occurs in the next two stages, fragment shading and per-fragment operations.
+
+### Fragment Shading
+THe final stage where the programmer has programmable control over the color of a screen location is during the fragment shading. In this shader stage, you use a shader to determine the fragment's
+final color (although the next stage, per-fragment operations can modify the color one last time), and potentially its depth value. Fragment shaders are powerful as they often emply texture mapping
+to augment the colors provided by the vertex processing stages. A fragment shader may also terminate processing a fragment if it determines that fragment should not be drawn; this process is called
+"fragment discard".
+
+A helpful way of thinking about the difference between shaders that deal with vertices and fragment shaders is: vertex shading (including tesselation and geometry shading) determine where on the
+screen a primitive is, while fragment shading uses that information to determine what color that fragment will be.
+
+### Pre-Fragment Operations
+Additional fragment processing, outside of what you can currently do in a fragment shader is the final processing of individual fragments. During this stage a fragment's visibility is determined
+using "depth testing" (also commonly known as "z-buffering") and "stencil testing". If a fragment successfully makes it through all of the enabled tests, it may be written directly to the framebuffer,
+updating the color (and possibly depth value) of its pixel, or if blending is enabled, the fragment's color will be combinded with the pixel's current color to generate a new color that is written
+into the framebuffer.
+
+Gernally, pixel data comes from an image file, although it may also be created by rendering using OpenGL. Pixel data is usually stored in "texture map's" for use with texture mapping, which allows
+any texture stage to look up data values from one or more texture maps.
+
+### Our First Program: A Detailed Discussion
+
 
 [glew-lib]: 	http://glew.sourceforge.net/
 [glfw-lib]:	http://www.glfw.org/
