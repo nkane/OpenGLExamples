@@ -400,7 +400,64 @@ Gernally, pixel data comes from an image file, although it may also be created b
 any texture stage to look up data values from one or more texture maps.
 
 ### Our First Program: A Detailed Discussion
+Starting at the beginning, of how our program would execute - we first look at what is going on in the main() function:
 
+#### Main
+The first line declares a variable of type GFLWwindow, this type is declared in the [glfw][glfw-lib] library. The next line is a function call glfwInit() that sets up platform specific window
+contexting for the [glfw][glfw-lib] library. The following function call glfwCreateWindow() creates a platform independent window context and returns the GLFWwindow type fully populated. Next,
+the function glfwMakeContextCurrent makes the OpenGL context of the specific window current on the calling thread - a context can only be made current on a single thread at a time and each
+thread can have only a single current context at a time. If the window does not register successfully, a call to glfwTerminate() is made - this function destroys all remaining windows and
+cursors, restores any modified gamma ramps and frees any other allocated resources. 
+
+Continuing on, the call to glewInt() initializes another library that this source code is using: [glew][glew-lib](OpenGL Extension Wrangler). GLEW's job is to simplify dealing with accessing
+functions and other interesting programming phenomena introduced by the various operating systems with OpenGL. The next function call is our own init() function that we will cover momentarliy.
+A function call to glfwWindowShouldClose() passing in the declared GLFWwindow pointer variable - this is the event loop that will continue until a quit message has been posted to the application.
+Within the event loop, we are calling our declared function display() that we will cover as well. The next function call is to glfwSwapBuffers() - this function swaps the front and back buffers of
+the specific window when rendering with OpenGL. If the swap interval is greater than zero, the GPU driver waits the specific number of screen updates before swapping buffers. After the buffers have
+been swaped, the next call is glfwPollEvents() - this function processes only those events that are already in the event queue and then returns immediately. Processing events will cause the window
+and input callbacks acssociated with those events to be called.
+
+```C
+int main(int argc, char *argv[])
+{
+	GLFWwindow *window;
+
+	if (!glfwInit())
+	{
+		return -1;
+	}
+
+	window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+	if (!window)
+	{
+		glfwTerminate();
+		return -1;
+	}
+
+	glfwMakeContextCurrent(window);
+
+	if (glewInit())
+	{
+		glfwTerminate();
+		return -1;
+	}
+
+	init();
+
+	while (!glfwWindowShouldClose(window))
+	{
+		display();
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+	
+	glfwTerminate();
+
+	return 0;
+}
+```
+
+#### OpenGL Initialization
 
 [glew-lib]: 	http://glew.sourceforge.net/
 [glfw-lib]:	http://www.glfw.org/
