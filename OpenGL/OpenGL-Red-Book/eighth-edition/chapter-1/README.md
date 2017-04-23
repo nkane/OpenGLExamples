@@ -458,10 +458,67 @@ int main(int argc, char *argv[])
 ```
 
 #### OpenGL Initialization
+This portion is going to cover the init() function that we have defined in our program - this portion of the program vastly differs from the books example.
+The first function glGenVertexArrays(GLsizei n, GLunint *arrays), allocates "n" number of vertex array object names for uses throughout this program. In 
+this program's case, NumVAOs is specified in the global variable section of the code - the glGenVertexArrays() returns the number of names to the caller's
+provided array, in this case VAOs (type - GLuint []). On another note, we will see numerous OpenGL commands of the form "glGen*", for allocating names to
+the various types of OpenGL objects. 
 
+A "name" is similiar to a pointer-type variable in C, in that until you allocate some memory and have the name reference it, the "name" is not much help.
+In OpenGL, the same holds true, and our allocation scheme is called "binding an object" - this is done by a collection of functions in OpenGL that have
+the form "glBind". For this exmaple program, we create and bind a "vertex-array object" using glBindVertexArray(GLuint array). The function glBindVertextArray()
+does three things - when using the value array that is other than zero and was returned from our previous call glGenVertexArrays(), a new "vertex-array object"
+is created and assigned that name. When binding to a previously created "vertex-array object", that vertex array object becomes active, which additionally affects
+the vertex array state stored in the object. When binding to an array value of zero, OpenGL stops using application-allocated "vertex-array objects" and returns
+to the default state for vertex arrays.
 
+In this example, after a "vertex-array object" is generated - it is bound (using object binding) with the call to glBindVertexArray(). Object binding is a common
+operation in OpenGL. When binding to an object for the first time (e.g., the first time "glBind*()" is called for a particular object name), OpenGL will internally
+allocate the memory  it needs and make that object current, which means that any operations relevant to the bound object, like the "vertex-array object", will affect
+its state from that point on in the program's execution. After the first call to "glBind*()" function, the newly created object will be initialized to its default
+state and typically requires additional initialization to make it useful. Think of binding an object like setting a track switch in a railroad yard - once the track
+switch has been set, all trains go down that set of tracks; however, when the switch is set to another track - all trains will then travel that new track. In general,
+it is the same for OpenGL objects. OpenGL objects need to be bound to an object in two situations:
+
+* Initially when an object has been created and initialized with data that is will hold.
+* Everytime an object that has been created and initialized needs to be used and is not currently bound.
+
+This latter situation listed will be described in detail when we get to the display function() where the function glBindVertexArray() is called the second time in the
+program; additionally, to provided completeness that is not provided in the example code the function glDeleteVertexArrays(GLsizei n, GLuint *arrays) is called once
+completed with a "vertex-array object" - the function glDeleteVertexArrays() deletes the n "vertex-array objects" specified in arrays, enabling the names for reuse as
+vertex arrays later. If a bound vertex array is deleted, the bindings for that vertex become zero (as if you had called glBindBuffer() with a value of zero) and the
+default vertex array becomes the current one. Unused names in arrays are released, but no changes to the current vertex array state are made; additonally, it can be
+determined if a name has been previously reserved as a "vertex-array object" by calling gllsVertexArray(GLuint array) - the function gllsVertexArray() returns GL_TRUE
+if the array is the name of a "vertex-array object" that was previously generated with glGenVertexArrays(), but has not been subsequently deleted, or the function
+returns GL_FALSE if the array is zero or nonzero value that is not the of a "vertex-array object". There simliar functions of the form glDelete* and glls* for all
+different tpyes of objects in OpenGL.
 
 ```C
+// NOTE: the follow variables are globally defined in the example program ...
+// VAO = Vertex-Array Object(s)
+
+enum VAO_IDs
+{
+	Triangles = 0,
+	NumVAOs = 1,
+};
+
+enum Buffer_IDs
+{
+	ArrayBuffer = 0,
+	NumBuffers = 1,
+};
+
+enum Attrib_IDs
+{
+	vPosition = 0,
+};
+
+GLuint VAOs[NumVAOs];
+GLuint Buffers[NumBuffers];
+
+const GLuint NumVertices = 6;
+
 void init(void)
 {
 	glGenVertexArrays(NumVAOs, VAOs);

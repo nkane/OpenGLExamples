@@ -14,18 +14,18 @@ static const GLchar* ReadShader(const char *);
 enum VAO_IDs
 {
 	Triangles = 0,
-	NumVAOs = 1
+	NumVAOs = 1,
 };
 
 enum Buffer_IDs 
 {
 	ArrayBuffer = 0,
-	NumBuffers = 1
+	NumBuffers = 1,
 };
 
 enum Attrib_IDs
 {
-	vPosition = 0
+	vPosition = 0,
 };
 
 GLuint VAOs[NumVAOs];
