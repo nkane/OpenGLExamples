@@ -459,5 +459,111 @@ int main(int argc, char *argv[])
 
 #### OpenGL Initialization
 
+
+
+```C
+void init(void)
+{
+	glGenVertexArrays(NumVAOs, VAOs);
+	glBindVertexArray(VAOs[Triangles]);
+
+	GLfloat vertices[NumVertices][2] =
+	{
+		// Triangle One
+		{ -0.90f, -0.90f },
+		{  0.85f, -0.90f }, 
+		{ -0.90f,  0.85f },
+		// Triangle Two
+		{  0.90f, -0.80f },
+		{  0.90f,  0.90f },
+		{ -0.85f,  0.90f }
+	};
+
+	glGenBuffers(NumBuffers, Buffers);
+	glBindBuffer(GL_ARRAY_BUFFER, Buffers[ArrayBuffer]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	GLuint GLProgram = glCreateProgram();
+
+	// NOTE(nick): vertex shader
+	GLuint Vertex_Shader = glCreateShader(GL_VERTEX_SHADER);
+	const GLchar *source = ReadShader(".\\triangles.vert");
+
+	glShaderSource(Vertex_Shader, 1, &source, NULL); 
+
+	glCompileShader(Vertex_Shader);
+
+	GLint compiled;
+
+	glGetShaderiv(Vertex_Shader, GL_COMPILE_STATUS, &compiled);
+
+	if (!compiled)
+	{
+		GLsizei len;
+		glGetShaderiv(Vertex_Shader, GL_INFO_LOG_LENGTH, &len);
+
+		GLchar *log = new GLchar[len + 1];
+		glGetShaderInfoLog(Vertex_Shader, len, &len, log);
+
+		std::cerr << log << std::endl;
+
+		delete [] log;
+	}
+
+	glAttachShader(GLProgram, Vertex_Shader);
+
+	// NOTE(nick): fragment shader
+	GLuint Fragment_Shader = glCreateShader(GL_FRAGMENT_SHADER);
+	source = ReadShader(".\\triangles.frag");
+
+	glShaderSource(Fragment_Shader, 1, &source, NULL); 
+
+	glCompileShader(Fragment_Shader);
+
+	glGetShaderiv(Fragment_Shader, GL_COMPILE_STATUS, &compiled);
+
+	if (!compiled)
+	{
+		GLsizei len;
+		glGetShaderiv(Fragment_Shader, GL_INFO_LOG_LENGTH, &len);
+
+		GLchar *log = new GLchar[len + 1];
+		glGetShaderInfoLog(Fragment_Shader, len, &len, log);
+
+		std::cerr << log << std::endl;
+
+		delete [] log;
+	}
+
+	glAttachShader(GLProgram, Fragment_Shader);
+
+	glLinkProgram(GLProgram);
+
+	GLint linked;
+
+	glGetProgramiv(GLProgram, GL_LINK_STATUS, &linked);
+
+	if (!linked)
+	{
+	        GLsizei len;
+	        glGetProgramiv(GLProgram, GL_INFO_LOG_LENGTH, &len);
+
+	        GLchar* log = new GLchar[len + 1];
+        	glGetProgramInfoLog(GLProgram, len, &len, log);
+
+		std::cerr << log << std::endl;
+
+        	delete [] log;
+	}
+
+	delete [] source;
+
+	glUseProgram(GLProgram);
+	
+	glVertexAttribPointer(vPosition, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+	glEnableVertexAttribArray(vPosition);
+}
+```
+
 [glew-lib]: 	http://glew.sourceforge.net/
 [glfw-lib]:	http://www.glfw.org/
