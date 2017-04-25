@@ -1,5 +1,3 @@
-
-
 ### What is OpenGL?
 OpenGL is an application programming interface (API), it is a software library for accessing features in graphics hardware.
 In OpenGL, you must construct your three-dimensional objects from a small set of geometric primitives - points, lines, 
@@ -496,6 +494,7 @@ different tpyes of objects in OpenGL.
 ```C
 // NOTE: the follow variables are globally defined in the example program ...
 // VAO = Vertex-Array Object(s)
+// VBO = Vertex-Buffer Object(s)
 
 enum VAO_IDs
 {
@@ -621,6 +620,36 @@ void init(void)
 	glEnableVertexAttribArray(vPosition);
 }
 ```
+
+#### Allocating Vertex-Buffer Objects
+A vertex-array object holds various data related to a collection of vertices. The data is tored in a buffer object and managed by the currently bound vertex-array object.
+While there is only a single type of vertex-array object, there are many types of objects, but not all of them specifically deal with vertex data. As mentioned previously,
+a buffer object is memory that the OpenGL server allocates and owns, and almost all data passed into OpenGL is done by storing the data in a buffer object.
+
+The code sequence of initializing a vertex-buffer object is similiar in flow to that of creating a vertex-array object, with an added step to actually populate the buffer
+with data. The fist step, names need to be created for the vertex-buffer objects. The function glGenBuffers(GLsizei n, GLuint *buffers) is used to to return "n" currently
+unused names for buffer objects in the array buffers; additionally, the names returned in buffers do not have to be a contiguous set of integers. In the example code,
+NumVBO (vertex buffer objects) is allocated into the array "buffers". 
+
+Once names have been allocated for the buffer, they can be brough into existence by calling the glBindBuffer(GLenum target, GLuint buffer) function. Since there are many
+different types of buffer objects in OpenGL, when a buffer is bound the type needs to be specified - in this example GL_ARRAY_BUFFER is being used. As with other objects,
+buffer objects can be deleted with glDeleteBuffers(GLsizei n, const GLuint *buffers). Querying if an integer value is a buffer-object name with gllsBuffer(GLuint buffer)
+is possible. 
+
+#### Loading Data into a Buffer Object
+After initializing the vertex-buffer object, the vertex data needs to be tranferred from our objects into the buffer object. This is done by the glBufferData() function -
+this function allocates storage for holding the vertex data and copying the data from arrays in the application to the OpenGL server's memory. The function's current 
+contract is the following - glBufferData(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage).
+
+The vertex data is tored in the array vertices. Typically, these values might be read in from a file containing a model or generate the values algorithmically. Since the
+data is vertex-attribute data, the buffer needs specified as a GL_ARRAY_BUFFER in the call to glBufferData() as the first parameter, the next parameter is the size of
+memory to be allocated (in bytes) by computing the sizeof(vertices) will handle that, and last specify hwo the data will be used by OpenGL. Since the data will be used
+for drawing geometry, and will not change for the life of the program GL_STATIC_DRAW is a decent choice.
+
+If you take a look at the values in the vertice array, you will notice that they are all in the range -1 to 1 in both X and Y fields. In reality, OpenGL only knows how to
+draw geometric primitives into coordinate space. In fact, the range coordinates are known as normalized-device coordinates (NDCs). 
+
+#### Initializing Our Vertex and Fragment Shaders
 
 [glew-lib]: 	http://glew.sourceforge.net/
 [glfw-lib]:	http://www.glfw.org/
