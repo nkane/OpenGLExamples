@@ -181,6 +181,7 @@ void display(void)
 
 	glBindVertexArray(VAOs[Triangles]);
 	glDrawArrays(GL_TRIANGLES, 0, NumVertices);
+	glFlush();
 }
 
 static const GLchar* ReadShader(const char *filename)

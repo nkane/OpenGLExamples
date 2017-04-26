@@ -650,6 +650,117 @@ If you take a look at the values in the vertice array, you will notice that they
 draw geometric primitives into coordinate space. In fact, the range coordinates are known as normalized-device coordinates (NDCs). 
 
 #### Initializing Our Vertex and Fragment Shaders
+Every OpenGL program that wants to use OpenGL Version 3.1 or greater must provide at least two shaders:
+
+* A vertex shader
+* A fragment shader
+
+In this code example, we accomplish that by using our using the glCreateProgram(void) function - this function creates an empty program object, a program object is an object
+to which a shader object(s) can be attached. Next, we create a vertex shader by calling the glCreateShader(GLenum shaderType) function - this function creates an empty shader
+object and returns a non-zero value by which it can be referened. A shader object is used to maintain the source code strings taht define a shader (for vertex shaders, 
+GL_VERTEX_SHADER is used). Following the creation of the vertex shader, the source code for the vertex shader needs to be loaded into memory with the help of a function 
+defined and implemented in the source code called ReadShader(char *). Once completed reading in the vertex shader source code and loading into memory, the function
+glShaderSource(GLuint shader, GLsizei count, const GLchar **string, const GLint *length) is called - this function sets the source code in the shader to the source code
+in the array of strings specified by the string. After the source code for the vertex shader is set / copied over to the Vertex_Shader object, the shader needs to be compiled
+by calling glCompileShader(GLuint shader) - glCompileShader() compiles the source code strings that have been stored in the shader object specified by shader. Next, we need
+to check that the shader compiled successfully on the GPU by creating GLint variable "compiled" and querying the GPU for the compile status - this is done by calling the 
+function glGetShaderiv(GLuint shader, GLenum pname, GLint *params), the function glGetShaderiv() returns the params the value of a parameter for a specific shader object. In 
+this case we are checking to see if a shader has successfully compiled, so we need to use GL_COMPILE_STATUS. Using that flag will return GL_TRUE if the last compiled operation
+on the shader was successful and GL_FALSE otherwise. Finally, once the vertex shader has been compiled successfully on the GPU the glAttachShader(GLuint program, GLuint shader)
+function is called in order to attach shader(s) objects specified by shader to the program object specified by program. This indicates that shader will be included in link
+operations that will be performed on program.
+
+The process for fragment shader is similiar to the above, but different enums are passed in as arguments - at this point it would be wise to review the source to get a better
+perspective on how loading / compiling shaders works. Once completed attaching the fragment shader to the program, we need to attempt to link the program together with the attached
+shaders by calling glLinkProgram(GLuint program) - glLinkProgram() links the program object. Once we attempt to link the program, we need to query the GPU to see if the program
+successfully linked creating a new GLint variable linked and passing it in to the function glGetProgramiv() with the flag option GL_LINK_STATUS. Once the program has been successfully
+compiled and linked, the function glUseProgram(GLuint program) can be called - glUseProgram() specifies the handle of the program object whose executables are to be used as part of
+current rendering state.
+
+Vertex Shader Example:
+```GLSL
+#version 430 core
+
+layout (location = 0) in vec4 vPosition;
+
+void
+main()
+{
+	gl_Position = vPosition;
+}
+```
+
+Above is the vertex shader used in the example program, this vertex shader is example of a "pass-through shader" - meaning it only copies input data to output data. The first line is
+"#version 430 core", this specifies what version of OpenGL Shading Language that is to be used. The "430" indicates that the version of GLSL associated with OpenGL Version 4.3. Next,
+a shader variable is allocated. Shader variables are a shader's conneciton to the outside world - meaning that a shader does not know where data comes from, but it sees its input
+variables populated with data everytime it executes. It is the programmers responsiblity to connect the shader plumbing, so that way data can flow into and between the various OpenGL
+shader stages. The one variable declared is vPosition, it is considered input, because of the "in" keyword. Typically, it is easier to tell what is going on with variable declaration
+line by reading it from right to left:
+
+* vPosition is the name of the variable - the v prefix stands for vertex.
+* vec4 is a four-component vector of floating-point values; additionally, the data for each vertex only defines two coordinates instead of four in the example program - where do the other two coordinates come from? OpenGL will automatically fill in any missing coordinates with default values. The vec4 default value is a vec4(0, 0, 0, 1).
+* in is a keyword taht describes which direction the data flows into the shader. If you are wondering if there might be an out, that would be correct.
+* lastly, the layout(location = 0) part is called a layout qualifier, it provides meta-data for our variable declaration. There are many options that can be set with a layout qualifier.
+
+The core of the vertex shader is defined in the main() function. Every shader in OpenGL, regardless of what type / stage the shader is used for it will have a main() funciton. For our
+example's vertex shader, all it does is copy the input vertex position to the special vertex-shader ouptut gl_Position. 
+
+Fragment Shader Example:
+```GLSL
+#version 430
+
+out vec4 fColor;
+
+void
+main()
+{
+	fColor = vec4(0.0, 0.0, 1.0, 1.0);
+}
+
+```
+The fragment shader should look similar in format to the vertex shader; however, the highlights of the example's fragment shader are the following:
+* The variable declared fColor is an output value that is the fragments color.
+* Assigning the fragment's color. In this case, each fragment is assigned this vector of four values. In OpenGL, colors are represented in what is called RGB color space, with each color
+component ("R" for red, "G" for green, and "B" for blue) ranging 0 - 1; additionally, OpenGL actually uses RGBA (A for Alpha) color space. Alpha, is a measure of translucency. Fragment
+shaders are immensely powerful, and there will be many techniques that we can do with them.
+
+
+The final two functions in the inti() function deal specifically with associating variables in a vertex shader with data that has been stored in a buffer object. This is what was previously
+referred to as the shader plumbing, in that a conduit between the application and a shader(s) needs to be setup. To associate data going into the vertex shader, which is the entrance all vertex
+data take to get processed by OpenGL, the shader's "in" variables need to be connected to a vertex-attribute array - this is accomplished by calling the function
+glVertexAttribePointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer). The glVertexAttribPointer() function specifies where the data values
+for the index (shader attribute location) can be accessed, pointer is the offest from the start of the buffer object (assuming zero-based addressing) in basic-machine units (i.e., bytes) for
+the first set of values in the array, size represents the number of components to be updated per vertex, and ca be either 1, 2, 3, 4, or GL_BGRA, type specifies the data type of each element
+in the array, normalized indicates that the vertex data should be normalized, stride is the byte offset between consecutive elements in the array. 
+
+At this point, the last remaining task is to enable the vertex-attribute array - this is accomplished by calling glEnableVertexAttribArray(GLuint index) and passing the index of the attribute
+array pointer initialized by calling glVertexAttribPointer() function.
+
+#### First OpenGL Rendering
+Once all the above is setup and data is initialized, rendering (for the moment) is quiet simple. While the display() function is only a few lines long it is a sequence of operations that is
+virtually the same in all OpenGL applications:
+
+```C
+void display(void)
+{
+	static const float black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	
+	glClearBufferfv(GL_COLOR, O, black);
+
+	glBindVertexArray(VAO[Triangles]);
+	glDrawArrays(GL_TRIANGES, 0, NumVertices);
+}
+``` 
+
+First, the function begins by clearing the framebuffer another function that could be used is glClear(GLbitfield mask) - this function clears the specified buffers to their current clearing values. The mask argument is a
+bitwise logical OR combination of values; however, instead we use glClearBufferfv(). The next calls select the collection of vertices that are going to be drawn and request tahy they be rendered - the next function cal
+is glBindVertexArray() to select the vertex array that is going to be used as vertex data. Once that is complete, the function glDrawArrays(GLenum mode, GLint first, GLsizei count) is called - this function constructs
+a sequence of geometric primitives using the elements from the currently bound vertex array starting at first and ending at first + count - 1, mode specifies what kinds of primitives are constructed. The glFlush() function
+forces previously issues OpenGL commands to begin execution, thus guaranteeing that they completed in finite time.
+
+
+#### Advanced
+
 
 [glew-lib]: 	http://glew.sourceforge.net/
 [glfw-lib]:	http://www.glfw.org/
