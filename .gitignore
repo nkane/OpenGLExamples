@@ -31,3 +31,13 @@
 
 # Visual Studio Debugging
 *.pdb
+
+# vim files
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-v][a-z]
+[._]sw[a-p]
+Session.vim
+.netrwhist
+*~
+tags

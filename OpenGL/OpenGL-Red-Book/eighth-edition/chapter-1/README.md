@@ -1,3 +1,6 @@
+# Introduction to OpenGL
+
+
 ### What is OpenGL?
 OpenGL is an application programming interface (API), it is a software library for accessing features in graphics hardware.
 In OpenGL, you must construct your three-dimensional objects from a small set of geometric primitives - points, lines, 
@@ -760,7 +763,9 @@ forces previously issues OpenGL commands to begin execution, thus guaranteeing t
 
 
 #### Advanced
-
+In order to accurately measure how long a process takes - the process may be an the time to render an object, draw a full scene, or any other operations that OpenGL might do, we need to know when OpenGL is completed with
+whatever operations that are being measured. A useful function while developing is, glFinish(void) - the glFinish() function forces completion of all pending OpenGL commands and waits for their completion. Another two
+functions that are useful, void glEnable(GLenum) and void glDisable(GLenum) - glEnable() turns on capabilities and glDisable() turns off capabilities.
 
 [glew-lib]: 	http://glew.sourceforge.net/
 [glfw-lib]:	http://www.glfw.org/
