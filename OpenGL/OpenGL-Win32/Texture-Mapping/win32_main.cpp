@@ -120,9 +120,9 @@ int DrawGLScene(GLvoid)
 	glLoadIdentity();
 	glTranslatef(0.0f, 0.0f, -5.0f);
 
-	//glRotatef(x_rotation, 1.0f, 0.0f, 0.0f);
-	//glRotatef(y_rotation, 0.0f, 1.0f, 0.0f);
-	//glRotatef(z_rotation, 0.0f, 0.0f, 1.0f);
+	glRotatef(x_rotation, 1.0f, 0.0f, 0.0f);
+	glRotatef(y_rotation, 0.0f, 1.0f, 0.0f);
+	glRotatef(z_rotation, 0.0f, 0.0f, 1.0f);
 
 	glBindTexture(GL_TEXTURE_2D, texture[0]);
 
@@ -132,28 +132,97 @@ int DrawGLScene(GLvoid)
 		// bottom left of texture and quad point
 		glTexCoord2f( 0.0f, 0.0f );
 		glVertex3f( -1.0f, -1.0f, 1.0f );
-
 		// bottom right of texture and quad point
 		glTexCoord2f( 1.0f, 0.0f );
 		glVertex3f( 1.0f, -1.0f, 1.0f );
-
 		// top right of texture and quad point
 		glTexCoord2f( 1.0f, 1.0f );
 		glVertex3f( 1.0f, 1.0f, 1.0f );
-
 		// top left of texture and quad point
 		glTexCoord2f( -1.0f, 1.0f );
 		glVertex3f( -1.0f, 1.0f, 1.0f );
 		// end front face
 
 		// begin back face
-		//
+		// bottom right of texture and quad point
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( -1.0f, -1.0f, -1.0f );
+		// top right of texture and quad point
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( -1.0f, 1.0f, -1.0f );
+		// top left of texture and quad point
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( 1.0f, 1.0f, -1.0f );
+		// bottom left of texture and quad point
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( 1.0f, -1.0f, -1.0f );
+		// end back face
+		
+		// begin top face
+		// top left of texture and quad point
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( -1.0f, 1.0f, -1.0f );
+		// bottom left of texture and quad point
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( -1.0f, 1.0f, 1.0f );
+		// bottom right of texture and quad point
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( 1.0f, 1.0f, 1.0f );
+		// top right of texture and quad
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( 1.0f, 1.0f, -1.0f );
+		// end top face
+
+		// begin bottom face
+		// top right of texture and quad point
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( -1.0f, -1.0f, -1.0f );
+		// top left of texture and quad point
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( 1.0f, -1.0f, -1.0f );
+		// bottom left of texture and quad point
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( 1.0f, -1.0f, 1.0f );
+		// bottom right of texture and quad point
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( -1.0f, -1.0f, 1.0f );
+		// end bottom face
+
+		// begin right face
+		// bottom right of texture and quad point
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( 1.0f, -1.0f, -1.0f );
+		// top right of texture and quad point
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( 1.0f, 1.0f, -1.0f );
+		// top left of texture and quad point
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( 1.0f, 1.0f, 1.0f );
+		// bottom left of texture and quad point
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( 1.0f, -1.0f, 1.0f );
+		// end right face
+		
+		// begin left face
+		// bottom left of texture and quad point
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( -1.0f, -1.0f, -1.0f );
+		// bottom right of texture and quad point
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( -1.0f, -1.0f, 1.0f );
+		// top right of texture and quad point
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( -1.0f, 1.0f, 1.0f );
+		// top left of texture and quad point
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( -1.0f, 1.0f, -1.0f );
+		// end left face
 	}
 	glEnd();
 
-	//x_rotation += 0.3f;
-	//y_rotation += 0.2f;
-	//z_rotation += 0.4f;
+	x_rotation += 0.3f;
+	y_rotation += 0.2f;
+	z_rotation += 0.4f;
 
 	return TRUE;
 }
