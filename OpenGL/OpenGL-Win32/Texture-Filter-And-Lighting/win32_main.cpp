@@ -6,8 +6,8 @@
 #include <gl\gl.h>	// header file for OpenGL32 library
 #include <gl\glu.h>	// header file for GLu32 library
 
-#include "bitmap.h"
 #include "win32_main.h"
+#include "bitmap.h"
 
 #define global_variable static
 #define local_persist static
@@ -34,11 +34,14 @@ global_variable bool active = true;
 // global window fullscreen
 global_variable bool fullscreen = true;
 
-// global bitmap file
-global_variable loaded_bitmap BitMap;
+// global light active
+global_variable BOOL light = FALSE;
 
-// global storage for texture(s)
-global_variable GLuint texture[1];
+// global l key pressed
+global_variable BOOL LKeyPress = FALSE;
+
+// global f key pressed
+global_variable BOOL FKeyPRess = FALSE;
 
 // global x rotation
 global_variable GLfloat x_rotation;
@@ -46,8 +49,29 @@ global_variable GLfloat x_rotation;
 // global y rotation
 global_variable GLfloat y_rotation;
 
-// global z rotation
-global_variable GLfloat z_rotation;
+// global x rotation speed
+global_variable GLfloat x_speed;
+
+// global y rotation speed
+global_variable GLfloat y_speed;
+
+// global z rotation speed
+global_variable GLfloat z_speed = -5.0f;
+
+// global ambient light
+GLfloat AmbientLight[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+
+// global diffuse light
+GLfloat DiffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+// global light position
+GLfloat LightPosition[] = { 0.0f, 0.0f, 2.0f, 1.0f };
+
+// global texture filter
+GLuint Filter;
+
+// global textures
+GLuint Textures[3];
 
 // default window procedure
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM); 
@@ -98,17 +122,10 @@ GLvoid ResizeGLScene(GLsizei width, GLsizei height)
 
 int InitGL(GLvoid)
 {
-	if (!LoadGLTextures())
-	{
-		return FALSE;
-	}
-	
-	glEnable(GL_TEXTURE_2D);
 	glShadeModel(GL_SMOOTH);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
 	glClearDepth(1.0f);
 	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
 	glDepthFunc(GL_LEQUAL);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	return TRUE;
@@ -118,114 +135,6 @@ int DrawGLScene(GLvoid)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
-	glTranslatef(0.0f, 0.0f, -5.0f);
-
-	glRotatef(x_rotation, 1.0f, 0.0f, 0.0f);
-	glRotatef(y_rotation, 0.0f, 1.0f, 0.0f);
-	glRotatef(z_rotation, 0.0f, 0.0f, 1.0f);
-
-	glBindTexture(GL_TEXTURE_2D, texture[0]);
-
-	// begin drawing cube
-	glBegin(GL_QUADS);
-	{
-		// begin front face
-		// bottom left of texture and quad point
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex3f( -1.0f, -1.0f, 1.0f );
-		// bottom right of texture and quad point
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex3f( 1.0f, -1.0f, 1.0f );
-		// top right of texture and quad point
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex3f( 1.0f, 1.0f, 1.0f );
-		// top left of texture and quad point
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex3f( -1.0f, 1.0f, 1.0f );
-		// end front face
-
-		// begin back face
-		// bottom right of texture and quad point
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex3f( -1.0f, -1.0f, -1.0f );
-		// top right of texture and quad point
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex3f( -1.0f, 1.0f, -1.0f );
-		// top left of texture and quad point
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex3f( 1.0f, 1.0f, -1.0f );
-		// bottom left of texture and quad point
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex3f( 1.0f, -1.0f, -1.0f );
-		// end back face
-		
-		// begin top face
-		// top left of texture and quad point
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex3f( -1.0f, 1.0f, -1.0f );
-		// bottom left of texture and quad point
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex3f( -1.0f, 1.0f, 1.0f );
-		// bottom right of texture and quad point
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex3f( 1.0f, 1.0f, 1.0f );
-		// top right of texture and quad
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex3f( 1.0f, 1.0f, -1.0f );
-		// end top face
-
-		// begin bottom face
-		// top right of texture and quad point
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex3f( -1.0f, -1.0f, -1.0f );
-		// top left of texture and quad point
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex3f( 1.0f, -1.0f, -1.0f );
-		// bottom left of texture and quad point
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex3f( 1.0f, -1.0f, 1.0f );
-		// bottom right of texture and quad point
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex3f( -1.0f, -1.0f, 1.0f );
-		// end bottom face
-
-		// begin right face
-		// bottom right of texture and quad point
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex3f( 1.0f, -1.0f, -1.0f );
-		// top right of texture and quad point
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex3f( 1.0f, 1.0f, -1.0f );
-		// top left of texture and quad point
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex3f( 1.0f, 1.0f, 1.0f );
-		// bottom left of texture and quad point
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex3f( 1.0f, -1.0f, 1.0f );
-		// end right face
-		
-		// begin left face
-		// bottom left of texture and quad point
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex3f( -1.0f, -1.0f, -1.0f );
-		// bottom right of texture and quad point
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex3f( -1.0f, -1.0f, 1.0f );
-		// top right of texture and quad point
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex3f( -1.0f, 1.0f, 1.0f );
-		// top left of texture and quad point
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex3f( -1.0f, 1.0f, -1.0f );
-		// end left face
-	}
-	// end drawning cube
-	glEnd();
-
-	x_rotation += 0.3f;
-	y_rotation += 0.2f;
-	z_rotation += 0.4f;
-
 	return TRUE;
 }
 
@@ -558,7 +467,6 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 		return 0;
 	}
 
-
 	while (!done)
 	{
 		if (PeekMessage(&message, NULL, 0, 0, PM_REMOVE))
@@ -611,7 +519,7 @@ read_file_result ReadEntireFile(char *FileName)
 {
 	read_file_result Result = {};
 	HANDLE FileHandle = CreateFileA(FileName, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
-	if (FileHandle != INVALID_HANDLE_VALUE) 
+	if (FileHandle != INVALID_HANDLE_VALUE)
 	{
 		LARGE_INTEGER FileSize;
 		if (GetFileSizeEx(FileHandle, &FileSize))
@@ -632,8 +540,8 @@ read_file_result ReadEntireFile(char *FileName)
 					Result.Contents = 0;
 				}
 			}
+			CloseHandle(FileHandle);
 		}
-		CloseHandle(FileHandle);
 	}
 
 	return Result;
@@ -647,17 +555,17 @@ loaded_bitmap * LoadBMP(char *FileName)
 	if (ReadResult.ContentsSize != 0)
 	{
 		bitmap_header *Header = (bitmap_header *)ReadResult.Contents;
-		unsigned int *Pixels = (unsigned int *)((unsigned char*)ReadResult.Contents + Header->BitmapOffset);
+		unsigned int *Pixels = (unsigned int*)((unsigned char*)ReadResult.Contents + Header->BitmapOffset);
 		Result->Pixels = Pixels;
 		Result->Width = Header->Width;
 		Result->Height = Header->Height;
 
-		unsigned int RedMask   = Header->RedMask;
-		unsigned int GreenMask = Header->GreenMask;
-		unsigned int BlueMask  = Header->BlueMask;
-		unsigned int AlphaMask = ~(RedMask | GreenMask | BlueMask);
+		unsigned int RedMask	= Header->RedMask;
+		unsigned int GreenMask	= Header->GreenMask;
+		unsigned int BlueMask 	= Header->BlueMask;
+		unsigned int AlphaMask	= ~(RedMask | GreenMask | BlueMask);
 
-		bit_scan_result RedShift 	= FindLeastSignificantSetBit(RedMask);
+		bit_scan_result RedShift	= FindLeastSignificantSetBit(RedMask);
 		bit_scan_result GreenShift	= FindLeastSignificantSetBit(GreenMask);
 		bit_scan_result BlueShift	= FindLeastSignificantSetBit(BlueMask);
 		bit_scan_result AlphaShift	= FindLeastSignificantSetBit(AlphaMask);
@@ -671,12 +579,11 @@ loaded_bitmap * LoadBMP(char *FileName)
 				*SourceDest++ = (
 							(((C >> AlphaShift.Index) & 0xFF) << 24) |
 							(((C >> RedShift.Index) & 0xFF)   << 16) |
-							(((C >> GreenShift.Index) & 0xFF) << 8)  |
+							(((C >> GreenShift.Index) & 0xFF) << 8)	 |
 							(((C >> BlueShift.Index) & 0xFF)  << 0)
 						);
 			}
 		}
-
 	}
 
 	return Result;
@@ -687,13 +594,14 @@ int LoadGLTextures()
 	int Status = FALSE;
 
 	loaded_bitmap *TextureImage[1];
-	// TODO(nick): not sure this is necessary?
+	// TODO(nick): not sure this is necessary
 	memset(TextureImage, 0, sizeof(void *)*1);
+
 	if (TextureImage[0] = LoadBMP("../Data/cube.bmp"))
 	{
 		Status = TRUE;
-		glGenTextures(1, &texture[0]);
-		glBindTexture(GL_TEXTURE_2D, texture[0]);
+		glGenTextures(1, &Textures[0]);
+		glBindTexture(GL_TEXTURE_2D, Textures[0]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TextureImage[0]->Width, TextureImage[0]->Height, 0, GL_BGRA_EXT,
 			     GL_UNSIGNED_BYTE, TextureImage[0]->Pixels);
 
