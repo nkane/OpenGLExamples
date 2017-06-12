@@ -651,13 +651,28 @@ loaded_bitmap * LoadBMP(char *FileName)
 		Result->Width = Header->Width;
 		Result->Height = Header->Height;
 
-		unsigned int *SourceDestination = Pixels;
+		unsigned int RedMask   = Header->RedMask;
+		unsigned int GreenMask = Header->GreenMask;
+		unsigned int BlueMask  = Header->BlueMask;
+		unsigned int AlphaMask = ~(RedMask | GreenMask | BlueMask);
+
+		bit_scan_result RedShift 	= FindLeastSignificantSetBit(RedMask);
+		bit_scan_result GreenShift	= FindLeastSignificantSetBit(GreenMask);
+		bit_scan_result BlueShift	= FindLeastSignificantSetBit(BlueMask);
+		bit_scan_result AlphaShift	= FindLeastSignificantSetBit(AlphaMask);
+
+		unsigned int *SourceDest = Pixels;
 		for(int y = 0; y < Header->Height; ++y)
 		{
 			for (int x = 0; x < Header->Width; ++x)
 			{
-				*SourceDestination = (*SourceDestination >> 8) | (*SourceDestination << 24);
-				++SourceDestination;
+				unsigned int C = *SourceDest;
+				*SourceDest++ = (
+							(((C >> AlphaShift.Index) & 0xFF) << 24) |
+							(((C >> RedShift.Index) & 0xFF) << 16) 	 |
+							(((C >> GreenShift.Index) & 0xFF) << 8)  |
+							(((C >> BlueShift.Index) & 0xFF) << 0)
+						);
 			}
 		}
 	}

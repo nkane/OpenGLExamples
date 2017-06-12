@@ -24,3 +24,28 @@ struct bitmap_header
 };
 #pragma pack(pop)
 
+struct bit_scan_result
+{
+	bool Found;
+	unsigned int Index;
+};
+
+inline bit_scan_result
+FindLeastSignificantSetBit(unsigned int value)
+{
+	bit_scan_result Result = {};
+	// only is MSVC
+	Result.Found = _BitScanForward((unsigned long *)&Result.Index, value);
+	for (unsigned int Test = 0; Test < 32; ++Test)
+	{
+		if (value & (1 << Test))
+		{
+			Result.Index = Test;
+			Result.Found = true;
+			break;
+		}
+	}
+
+	return Result;
+}
+
