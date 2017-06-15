@@ -13,92 +13,31 @@
 #define local_persist static
 #define internal static
 
-// global OpenGL rendering context handle
 global_variable HGLRC RenderContextHandle = NULL;
-
-// global device context handle
 global_variable HDC DeviceContextHandle = NULL;
-
-// global window handle
 global_variable HWND WindowHandle = NULL;
-
-// global handle to an program instance
 global_variable HINSTANCE InstanceHandle = NULL;
 
-// global array for keyboard key presses
 global_variable bool keys[256];
-
-// global window active 
 global_variable bool active = true;
-
-// global window fullscreen
 global_variable bool fullscreen = true;
 
-// global light active
-global_variable BOOL light = FALSE;
-
-// global l key pressed
+global_variable BOOL Light = FALSE;
 global_variable BOOL LKeyPress = FALSE;
+global_variable BOOL FKeyPress = FALSE;
 
-// global f key pressed
-global_variable BOOL FKeyPRess = FALSE;
-
-// global x rotation
 global_variable GLfloat x_rotation;
-
-// global y rotation
 global_variable GLfloat y_rotation;
-
-// global x rotation speed
 global_variable GLfloat x_speed;
-
-// global y rotation speed
 global_variable GLfloat y_speed;
+global_variable GLfloat z = -5.0f;
 
-// global z rotation speed
-global_variable GLfloat z_speed = -5.0f;
-
-// global ambient light
 GLfloat AmbientLight[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-
-// global diffuse light
 GLfloat DiffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-// global light position
 GLfloat LightPosition[] = { 0.0f, 0.0f, 2.0f, 1.0f };
 
-// global texture filter
 GLuint Filter;
-
-// global textures
 GLuint Textures[3];
-
-// default window procedure
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM); 
-
-// resize and initialize the GL Window
-GLvoid ResizeGLScene(GLsizei, GLsizei);
-
-// initializes OpenGL
-int InitGL(GLvoid);
-
-// drawing function
-int DrawGLScene(GLvoid);
-
-// destorys rendering context, device context, and window handle
-GLvoid KillGLWindow(GLvoid);
-
-// creates a GL window
-BOOL CreateGLWindow(char *, int, int, int, bool);
-
-// read entire file
-read_file_result ReadEntireFile(char *);
-
-// loads bitmap file
-loaded_bitmap * LoadBMP(char *);
-
-// loads bitmaps and convert to textures
-int LoadGLTextures();
 
 GLvoid ResizeGLScene(GLsizei width, GLsizei height)
 {
@@ -115,6 +54,7 @@ GLvoid ResizeGLScene(GLsizei width, GLsizei height)
 	gluPerspective(45.0f,
 		      ((GLfloat)width / (GLfloat)height),
 		      0.1f, 100.0f);
+	glEnable(GL_TEXTURE_2D);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -122,12 +62,26 @@ GLvoid ResizeGLScene(GLsizei width, GLsizei height)
 
 int InitGL(GLvoid)
 {
+	if (!LoadGLTextures())
+	{
+		return FALSE;
+	}
+
+	glEnable(GL_TEXTURE_2D);
 	glShadeModel(GL_SMOOTH);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
 	glClearDepth(1.0f);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+	// set up ambient light
+	glLightfv(GL_LIGHT1, GL_AMBIENT, AmbientLight);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, DiffuseLight);
+	glLightfv(GL_LIGHT1, GL_POSITION, LightPosition);
+
+	glEnable(GL_LIGHT1);
+
 	return TRUE;
 }
 
@@ -135,6 +89,104 @@ int DrawGLScene(GLvoid)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
+
+	glTranslatef(0.0f, 0.0f, z);
+	glRotatef(x_rotation, 1.0f, 0.0f, 0.0f);
+	glRotatef(y_rotation, 0.0f, 1.0f, 0.0f);
+
+	glBindTexture(GL_TEXTURE_2D, Textures[Filter]);
+	
+	glBegin(GL_QUADS);
+	{
+		// front face
+		glNormal3f( 0.0f, 0.0f, 1.0f );
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( -1.0f, -1.0f, 1.0f );
+
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( 1.0f, -1.0f, 1.0f );
+
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( 1.0f, 1.0f, 1.0f );
+
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( -1.0, 1.0f, 1.0f );
+
+		// back face
+		glNormal3f( 0.0f, 0.0f, -1.0f );
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( -1.0f, -1.0f, -1.0f );
+
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( -1.0f, 1.0f, -1.0f );
+
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( 1.0f , 1.0f, -1.0f );
+
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( 1.0f, -1.0f, -1.0f );
+
+		// top face
+		glNormal3f( 0.0f, 1.0f, 0.0f );
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( -1.0f, 1.0f, -1.0f );
+
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( -1.0f, 1.0f, 1.0f );
+
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( 1.0f, 1.0f, 1.0f );
+
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( 1.0f, 1.0f, -1.0f );
+		
+		// bottom face
+		glNormal3f( 1.0f, 0.0f, 0.0f );
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( -1.0f, -1.0f, -1.0f );
+		
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( 1.0f, -1.0f, -1.0f );
+
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( 1.0f, -1.0f, 1.0f );
+
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( -1.0f, -1.0f, 1.0f );
+		
+		// right face
+		glNormal3f( 1.0f, 0.0f, 0.0f );
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( 1.0f, -1.0f, -1.0f );
+
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( 1.0f, 1.0f, -1.0f );
+
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( 1.0f, 1.0f, 1.0f );
+
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( 1.0f, -1.0f, 1.0f );
+
+		// left face
+		glNormal3f( -1.0f, 0.0f, 0.0f );
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( -1.0f, -1.0f, -1.0 );
+
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( -1.0f, -1.0f , 1.0f );
+
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( -1.0f, 1.0f, 1.0f );
+
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( -1.0f, 1.0f, -1.0f );
+	}
+	glEnd();
+
+	x_rotation += x_speed;
+	y_rotation += y_speed;
+	
 	return TRUE;
 }
 
@@ -495,6 +547,73 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 					SwapBuffers(DeviceContextHandle);
 				}
 
+				if (keys['L'] && !LKeyPress)
+				{
+					LKeyPress = TRUE; 
+					Light = !Light;
+
+					if (!Light)
+					{
+						glDisable(GL_LIGHTING);
+					}
+					else
+					{
+						glEnable(GL_LIGHTING);
+					}
+				}
+
+				if (!keys['L'])
+				{
+					LKeyPress = FALSE;
+				}
+
+				if (keys['F'] && !FKeyPress)
+				{
+					FKeyPress = TRUE;
+					Filter += 1;
+					if (Filter > 2)
+					{
+						Filter = 0;
+					}
+				}
+
+				if (!keys['F'])
+				{
+					FKeyPress = FALSE;
+				}
+
+				// page up
+				if (!keys[VK_PRIOR])
+				{
+					z -= 0.02f;
+				}
+
+				// page down
+				if (!keys[VK_NEXT])
+				{
+					z += 0.02f;z`
+				}
+
+				if (keys[VK_UP])
+				{
+					x_speed -= 0.01f;
+				}
+
+				if (keys[VK_DOWN])
+				{
+					x_speed += 0.01f;
+				}
+
+				if (keys[VK_RIGHT])
+				{
+					y_speed += 0.01f;
+				}
+
+				if (keys[VK_LEFT])
+				{
+					y_speed -= 0.01f;
+				}
+
 				if (keys[VK_F1])
 				{
 					keys[VK_F1] = FALSE;
@@ -597,16 +716,34 @@ int LoadGLTextures()
 	// TODO(nick): not sure this is necessary
 	memset(TextureImage, 0, sizeof(void *)*1);
 
+	// load bitmap
 	if (TextureImage[0] = LoadBMP("../Data/cube.bmp"))
 	{
 		Status = TRUE;
-		glGenTextures(1, &Textures[0]);
+
+		// create three textures
+		glGenTextures(3, &Textures[0]);
+
+		// create nearest filter texture
 		glBindTexture(GL_TEXTURE_2D, Textures[0]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TextureImage[0]->Width, TextureImage[0]->Height, 0, GL_BGRA_EXT,
 			     GL_UNSIGNED_BYTE, TextureImage[0]->Pixels);
 
+		// create linear filtered texture
+		glBindTexture(GL_TEXTURE_2D, Textures[1]);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TextureImage[0]->Width, TextureImage[0]->Height, 0, GL_BGRA_EXT,
+			     GL_UNSIGNED_BYTE, TextureImage[0]->Pixels);
+
+		// create mipmapped texture
+		glBindTexture(GL_TEXTURE_2D, Textures[2]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+		gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA8, TextureImage[0]->Width, TextureImage[0]->Height, GL_BGRA_EXT,
+				  GL_UNSIGNED_BYTE, TextureImage[0]->Pixels);
 
 		if (TextureImage[0])
 		{
