@@ -591,7 +591,7 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 				// page down
 				if (!keys[VK_NEXT])
 				{
-					z += 0.02f;z`
+					z += 0.02f;
 				}
 
 				if (keys[VK_UP])
