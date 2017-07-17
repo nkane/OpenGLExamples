@@ -2,52 +2,28 @@
  *  Created By: Nick Kane
  */
 
-#include <windows.h>	// header file for Windows
-#include <gl\gl.h>	// header file for OpenGL32 library
-#include <gl\glu.h>	// header file for GLu32 library
+#include <windows.h>
+#include <gl\gl.h>
+#include <gl\glu.h>
 
-#define global_variable static
-#define local_persist static
-#define internal static
+#define global_variable 	static
+#define local_persist 		static
+#define internal 		static
 
-// global OpenGL rendering context handle
 global_variable HGLRC RenderContextHandle = NULL;
-
-// global device context handle
 global_variable HDC DeviceContextHandle = NULL;
-
-// global window handle
 global_variable HWND WindowHandle = NULL;
-
-// global handle to an program instance
 global_variable HINSTANCE InstanceHandle = NULL;
-
-// global array for keyboard key presses
 global_variable bool keys[256];
-
-// global window active 
 global_variable bool active = true;
-
-// global window fullscreen
 global_variable bool fullscreen = true;
 
-// default window procedure
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM); 
-
-// resize and initialize the GL Window
-GLvoid ResizeGLScene(GLsizei, GLsizei);
-
-// initializes OpenGL
+LRESULT CALLBACK WndProc(HWND windowHandle, UINT Message, WPARAM wParam, LPARAM lParam);
+GLvoid ResizeGLScene(GLsizei width, GLsizei height);
 int InitGL(GLvoid);
-
-// drawing function
 int DrawGLScene(GLvoid);
-
-// destorys rendering context, device context, and window handle
 GLvoid KillGLWindow(GLvoid);
-
-//
-BOOL CreateGLWindow(char *, int, int, int, bool);
+BOOL CreateGLWindow(char *title, int width, int height, int bits, bool fullscreenflag);
 
 GLvoid ResizeGLScene(GLsizei width, GLsizei height)
 {
