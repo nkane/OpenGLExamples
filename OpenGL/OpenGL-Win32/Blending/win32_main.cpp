@@ -6,6 +6,9 @@
 #include <gl\gl.h>
 #include <gl\glu.h>
 
+#include "win32_main.h"
+#include "bitmap.h"
+
 #define global_variable 	static
 #define local_persist 		static
 #define internal 		static
@@ -17,13 +20,25 @@ global_variable HINSTANCE InstanceHandle = NULL;
 global_variable bool keys[256];
 global_variable bool active = true;
 global_variable bool fullscreen = true;
+global_variable bool light;
+global_variable bool blend;
+global_variable bool lpressed;
+global_variable bool fpressed;
+global_variable bool bpressed;
 
-LRESULT CALLBACK WndProc(HWND windowHandle, UINT Message, WPARAM wParam, LPARAM lParam);
-GLvoid ResizeGLScene(GLsizei width, GLsizei height);
-int InitGL(GLvoid);
-int DrawGLScene(GLvoid);
-GLvoid KillGLWindow(GLvoid);
-BOOL CreateGLWindow(char *title, int width, int height, int bits, bool fullscreenflag);
+global_variable GLfloat xrotation;
+global_variable GLfloat yrotation;
+global_variable GLfloat xspeed;
+global_variable GLfloat yspeed;
+global_variable GLfloat z = (-5.0f);
+
+GLfloat LightAmbient[] = { 0.5f, 0.5f, 0.5f, 1.0f, };
+GLfloat LightDiffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f, };
+GLfloat LightPosition[] = { 0.0f, 0.0f, 2.0f, 1.0f, };
+
+GLuint filter;
+GLuint texture[3];
+
 
 GLvoid ResizeGLScene(GLsizei width, GLsizei height)
 {
@@ -437,5 +452,75 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 
 	KillGLWindow();
 	return (message.wParam);
+}
+
+read_file_result ReadEntireFile(char *FileName)
+{
+	read_file_result Result = {};
+	HANDLE FileHandle = CreateFileA(FileName, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+	if (FileHandle != INVALID_HANDLE_VALUE)
+	{
+		LARGE_INTEGER FileSize;
+		if (GetFileSizeEx(FileHandle, &FileSize))
+		{
+			unsigned int FileSize32 = ((unsigned int)FileSize.QuadPart);
+			Result.Contets = VirtualAlloc(0, FileSize32, (MEM_RELEASE | MEM_COMMIT), PAGE_READWRITE);
+			if (Result.Contents)
+			{
+				DWORD BytesRead;
+				if (ReadFile(FileHandle, Result.Contents, FileSize32, &BytesRead, 0) &&
+				   (FileSize32 == BytesRead))
+				{
+					Result.ContentsSize = FileSize32;
+				}
+				else
+				{
+					Result.Contenst = 0;
+				}
+				CloseHandle(FileHandle);
+			}
+		}
+	}
+
+	return Result;
+}
+
+load_bitmap * LoadBMP(char *FileName)
+{
+	load_bitmap *Result = (load_bitmap *)VirtualAlloc(0, (unsigned int)sizeof(load_bitmap), (MEM_RESERVE | MEM_COMMIT), PAGE_READWRITE);
+	read_file_result ReadResult = ReadEntireFile(FileName);
+
+	if (ReadResult.ContentsSize != 0)
+	{
+		bitmap_header *Header = (bitmap_header *)ReadResult.Contents;
+		unsigned int *Pixels = (unsigned int*)((unsigned char*)ReadResult.Contents + Header->BitmapOffset);
+		Result->Pixel = Pixels;
+		Result->Width = Header->Width;
+		Result->Height = Header->Height;
+
+		unsigned int RedMask 	= Header->RedMask;
+		unsigned int GreenMask	= Header->GreenMask;
+		unsigned int BlueShift	= Header->BlueMask;
+		unsigned int AlphaMask	= ~(RedMask | GreenMask | BlueMask);
+
+		bit_scan_result RedShift	= FindLeastSignificantSetBit(RedMask);
+		bit_scan_result GreenShift	= FindLeastSignificantSetBit(GreenMask);
+		bit_scan_result BlueShift	= FindLeastSignificantSetBit(BlueMask);
+		bit_scan_result AlphaShift	= FindLeastSignificantSetBit(AlphaMask);
+
+		unsigned int *SourceDest = Pixels;
+		for (int y = 0; y < Header->Height; ++y)
+		{
+			for (int x = 0; x < Header->Width; ++x)
+			{
+				unsigned int C = *SourceDest;
+				*SourceDest = (
+							()
+					      );
+			}
+		}
+	}
+
+	return Result;
 }
 
