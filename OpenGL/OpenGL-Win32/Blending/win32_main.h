@@ -8,7 +8,7 @@ typedef struct read_file_result
 	void *Contents;
 } read_file_result;
 
-struct load_bitmap
+struct loaded_bitmap
 {
 	int Width;
 	int Height;
@@ -28,4 +28,9 @@ GLvoid KillGLWindow(GLvoid);
 BOOL CreateGLWindow(char *title, int width, int height, int bits, bool fullscreenflag);
 
 read_file_result ReadEntireFile(char *FileName);
+
+loaded_bitmap *LoadBMP(char *);
+
+int LoadGLTextures();
+
 

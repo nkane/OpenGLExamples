@@ -17,28 +17,30 @@ global_variable HGLRC RenderContextHandle = NULL;
 global_variable HDC DeviceContextHandle = NULL;
 global_variable HWND WindowHandle = NULL;
 global_variable HINSTANCE InstanceHandle = NULL;
+
 global_variable bool keys[256];
 global_variable bool active = true;
 global_variable bool fullscreen = true;
-global_variable bool light;
-global_variable bool blend;
-global_variable bool lpressed;
-global_variable bool fpressed;
-global_variable bool bpressed;
 
-global_variable GLfloat xrotation;
-global_variable GLfloat yrotation;
-global_variable GLfloat xspeed;
-global_variable GLfloat yspeed;
+global_variable bool Light = false;
+global_variable bool Blend = false;
+
+global_variable bool LKeyPress = false;
+global_variable bool FKeyPress = false;
+global_variable bool BKeyPress = false;
+
+global_variable GLfloat x_rotation;
+global_variable GLfloat y_rotation;
+global_variable GLfloat x_speed;
+global_variable GLfloat y_speed;
 global_variable GLfloat z = (-5.0f);
 
-GLfloat LightAmbient[] = { 0.5f, 0.5f, 0.5f, 1.0f, };
-GLfloat LightDiffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f, };
+GLfloat AmbientLight[] = { 0.5f, 0.5f, 0.5f, 1.0f, };
+GLfloat DiffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f, };
 GLfloat LightPosition[] = { 0.0f, 0.0f, 2.0f, 1.0f, };
 
-GLuint filter;
-GLuint texture[3];
-
+GLuint Filter;
+GLuint Textures[3];
 
 GLvoid ResizeGLScene(GLsizei width, GLsizei height)
 {
@@ -62,12 +64,25 @@ GLvoid ResizeGLScene(GLsizei width, GLsizei height)
 
 int InitGL(GLvoid)
 {
+	if (!LoadGLTextures())
+	{
+		return FALSE;
+	}
+
+	glEnable(GL_TEXTURE_2D);
 	glShadeModel(GL_SMOOTH);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
 	glClearDepth(1.0f);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+	
+	// set up ambient light
+	glLightfv(GL_LIGHT1, GL_AMBIENT, AmbientLight);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, DiffuseLight);
+	glLightfv(GL_LIGHT1, GL_POSITION, LightPosition);
+
+	glEnable(GL_LIGHT1); 
 	return TRUE;
 }
 
@@ -75,6 +90,104 @@ int DrawGLScene(GLvoid)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
+
+	glTranslatef(0.0f, 0.0f, z);
+	glRotatef(x_rotation, 1.0f, 0.0f, 0.0f);
+	glRotatef(y_rotation, 0.0f, 1.0f, 0.0f);
+
+	glBindTexture(GL_TEXTURE_2D, Textures[Filter]);
+
+	glBegin(GL_QUADS);
+	{
+		// front face
+		glNormal3f( 0.0f, 0.0f, 1.0f );
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( -1.0f, -1.0f, 1.0f );
+
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( 1.0f, -1.0f, 1.0f );
+
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( 1.0f, 1.0f, 1.0f );
+
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( -1.0, 1.0f, 1.0f );
+
+		// back face
+		glNormal3f( 0.0f, 0.0f, -1.0f );
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( -1.0f, -1.0f, -1.0f );
+
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( -1.0f, 1.0f, -1.0f );
+
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( 1.0f , 1.0f, -1.0f );
+
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( 1.0f, -1.0f, -1.0f );
+
+		// top face
+		glNormal3f( 0.0f, 1.0f, 0.0f );
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( -1.0f, 1.0f, -1.0f );
+
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( -1.0f, 1.0f, 1.0f );
+
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( 1.0f, 1.0f, 1.0f );
+
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( 1.0f, 1.0f, -1.0f );
+		
+		// bottom face
+		glNormal3f( 1.0f, 0.0f, 0.0f );
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( -1.0f, -1.0f, -1.0f );
+		
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( 1.0f, -1.0f, -1.0f );
+
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( 1.0f, -1.0f, 1.0f );
+
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( -1.0f, -1.0f, 1.0f );
+		
+		// right face
+		glNormal3f( 1.0f, 0.0f, 0.0f );
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( 1.0f, -1.0f, -1.0f );
+
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( 1.0f, 1.0f, -1.0f );
+
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( 1.0f, 1.0f, 1.0f );
+
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( 1.0f, -1.0f, 1.0f );
+
+		// left face
+		glNormal3f( -1.0f, 0.0f, 0.0f );
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex3f( -1.0f, -1.0f, -1.0 );
+
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex3f( -1.0f, -1.0f , 1.0f );
+
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex3f( -1.0f, 1.0f, 1.0f );
+
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex3f( -1.0f, 1.0f, -1.0f );
+	}
+	glEnd();
+
+	x_rotation += x_speed;
+	y_rotation += y_speed;
+
 	return TRUE;
 }
 
@@ -435,6 +548,73 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 					SwapBuffers(DeviceContextHandle);
 				}
 
+				if (keys['L'] && !LKeyPress)
+				{
+					LKeyPress = TRUE;
+					Light = !Light;
+
+					if (!Light)
+					{
+						glDisable(GL_LIGHTING);
+					}
+					else
+					{
+						glEnable(GL_LIGHTING);
+					}
+				}
+
+				if (!keys['L'])
+				{
+					LKeyPress = FALSE;
+				}
+
+				if (keys['F'] && !FKeyPress)
+				{
+					FKeyPress = TRUE;
+					Filter += 1;
+					if (Filter > 2)
+					{
+						Filter = 0;
+					}
+				}
+
+				if (!keys['F'])
+				{
+					FKeyPress = FALSE;
+				}
+
+				// page up
+				if (!keys[VK_PRIOR])
+				{
+					z -= 0.02f;
+				}
+
+				// page down
+				if (!keys[VK_NEXT])
+				{
+					z += 0.02f;
+				}
+
+				if (keys[VK_UP])
+				{
+					x_speed -= 0.01f;
+				}
+
+				if (keys[VK_DOWN])
+				{
+					x_speed += 0.01f;
+				}
+
+				if (keys[VK_RIGHT])
+				{
+					y_speed += 0.01f;
+				}
+
+				if (keys[VK_LEFT])
+				{
+					y_speed -= 0.01f;
+				}
+
 				if (keys[VK_F1])
 				{
 					keys[VK_F1] = FALSE;
@@ -454,6 +634,7 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 	return (message.wParam);
 }
 
+// TODO(nick): memory allocated here needs to be released
 read_file_result ReadEntireFile(char *FileName)
 {
 	read_file_result Result = {};
@@ -464,7 +645,7 @@ read_file_result ReadEntireFile(char *FileName)
 		if (GetFileSizeEx(FileHandle, &FileSize))
 		{
 			unsigned int FileSize32 = ((unsigned int)FileSize.QuadPart);
-			Result.Contets = VirtualAlloc(0, FileSize32, (MEM_RELEASE | MEM_COMMIT), PAGE_READWRITE);
+			Result.Contents = VirtualAlloc(0, FileSize32, (MEM_RELEASE | MEM_COMMIT), PAGE_READWRITE);
 			if (Result.Contents)
 			{
 				DWORD BytesRead;
@@ -475,7 +656,7 @@ read_file_result ReadEntireFile(char *FileName)
 				}
 				else
 				{
-					Result.Contenst = 0;
+					Result.Contents = 0;
 				}
 				CloseHandle(FileHandle);
 			}
@@ -485,22 +666,22 @@ read_file_result ReadEntireFile(char *FileName)
 	return Result;
 }
 
-load_bitmap * LoadBMP(char *FileName)
+loaded_bitmap * LoadBMP(char *FileName)
 {
-	load_bitmap *Result = (load_bitmap *)VirtualAlloc(0, (unsigned int)sizeof(load_bitmap), (MEM_RESERVE | MEM_COMMIT), PAGE_READWRITE);
+	loaded_bitmap *Result = (loaded_bitmap *)VirtualAlloc(0, (unsigned int)sizeof(loaded_bitmap), (MEM_RESERVE | MEM_COMMIT), PAGE_READWRITE);
 	read_file_result ReadResult = ReadEntireFile(FileName);
 
 	if (ReadResult.ContentsSize != 0)
 	{
 		bitmap_header *Header = (bitmap_header *)ReadResult.Contents;
 		unsigned int *Pixels = (unsigned int*)((unsigned char*)ReadResult.Contents + Header->BitmapOffset);
-		Result->Pixel = Pixels;
+		Result->Pixels = Pixels;
 		Result->Width = Header->Width;
 		Result->Height = Header->Height;
 
 		unsigned int RedMask 	= Header->RedMask;
 		unsigned int GreenMask	= Header->GreenMask;
-		unsigned int BlueShift	= Header->BlueMask;
+		unsigned int BlueMask	= Header->BlueMask;
 		unsigned int AlphaMask	= ~(RedMask | GreenMask | BlueMask);
 
 		bit_scan_result RedShift	= FindLeastSignificantSetBit(RedMask);
@@ -514,13 +695,58 @@ load_bitmap * LoadBMP(char *FileName)
 			for (int x = 0; x < Header->Width; ++x)
 			{
 				unsigned int C = *SourceDest;
-				*SourceDest = (
-							()
+				*SourceDest++ = (
+							(((C >> AlphaShift.Index) & 0xFF) << 24) |
+							(((C >> RedShift.Index) & 0xFF)   << 16) |
+							(((C >> GreenShift.Index) & 0xFF) <<  8) |
+							(((C >> BlueShift.Index) & 0xFF)  <<  0)
 					      );
 			}
 		}
 	}
 
 	return Result;
+}
+
+int LoadGLTextures()
+{
+	int Status = FALSE;
+	loaded_bitmap *TextureImage[1];
+	// TODO(nick): not sure this is necessary
+	memset(TextureImage, 0, sizeof(void *)*1);
+
+	// load bitmap
+	if (TextureImage[0] = LoadBMP("../Data/cube.bmp"))
+	{
+		Status = TRUE;
+
+		// create three textures
+		glGenTextures(3, &Textures[0]);
+
+		// create nearest filter texture
+		glBindTexture(GL_TEXTURE_2D, Textures[0]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TextureImage[0]->Width, TextureImage[0]->Height, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, TextureImage[0]->Pixels);
+
+		// create linear filtered texture
+		glBindTexture(GL_TEXTURE_2D, Textures[1]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TextureImage[0]->Width, TextureImage[0]->Height, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, TextureImage[0]->Pixels);
+
+		// create mipmipped texture
+		glBindTexture(GL_TEXTURE_2D, Textures[2]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+		gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA8, TextureImage[0]->Width, TextureImage[0]->Height, GL_BGRA_EXT, GL_UNSIGNED_BYTE, TextureImage[0]->Pixels);
+
+		if (TextureImage[0])
+		{
+			VirtualFree(TextureImage[0], 0, MEM_RELEASE);
+		}
+	}
+
+	return Status;
 }
 
