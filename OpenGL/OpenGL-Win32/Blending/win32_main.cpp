@@ -35,8 +35,8 @@ global_variable GLfloat x_speed;
 global_variable GLfloat y_speed;
 global_variable GLfloat z = (-5.0f);
 
-GLfloat AmbientLight[] = { 0.5f, 0.5f, 0.5f, 1.0f, };
-GLfloat DiffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f, };
+GLfloat AmbientLight[] =  { 0.5f, 0.5f, 0.5f, 1.0f, };
+GLfloat DiffuseLight[] =  { 1.0f, 1.0f, 1.0f, 1.0f, };
 GLfloat LightPosition[] = { 0.0f, 0.0f, 2.0f, 1.0f, };
 
 GLuint Filter;
@@ -83,6 +83,10 @@ int InitGL(GLvoid)
 	glLightfv(GL_LIGHT1, GL_POSITION, LightPosition);
 
 	glEnable(GL_LIGHT1); 
+
+	glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
 	return TRUE;
 }
 
@@ -95,8 +99,7 @@ int DrawGLScene(GLvoid)
 	glRotatef(x_rotation, 1.0f, 0.0f, 0.0f);
 	glRotatef(y_rotation, 0.0f, 1.0f, 0.0f);
 
-	glBindTexture(GL_TEXTURE_2D, Textures[Filter]);
-
+	glBindTexture(GL_TEXTURE_2D, Textures[Filter]); 
 	glBegin(GL_QUADS);
 	{
 		// front face
@@ -548,6 +551,27 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 					SwapBuffers(DeviceContextHandle);
 				}
 
+				if (keys['B'] && !BKeyPress)
+				{
+					BKeyPress = TRUE;
+					Blend = !Blend;
+					if (Blend)
+					{
+						glEnable(GL_BLEND);
+						glDisable(GL_DEPTH_TEST);
+					}
+					else
+					{
+						glDisable(GL_BLEND);
+						glDisable(GL_DEPTH_TEST);
+					}
+				}
+
+				if (!keys['B'])
+				{
+					BKeyPress = FALSE;
+				}
+
 				if (keys['L'] && !LKeyPress)
 				{
 					LKeyPress = TRUE;
@@ -578,6 +602,8 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 					}
 				}
 
+				glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 				if (!keys['F'])
 				{
 					FKeyPress = FALSE;
@@ -645,7 +671,7 @@ read_file_result ReadEntireFile(char *FileName)
 		if (GetFileSizeEx(FileHandle, &FileSize))
 		{
 			unsigned int FileSize32 = ((unsigned int)FileSize.QuadPart);
-			Result.Contents = VirtualAlloc(0, FileSize32, (MEM_RELEASE | MEM_COMMIT), PAGE_READWRITE);
+			Result.Contents = VirtualAlloc(0, FileSize32, (MEM_RESERVE | MEM_COMMIT), PAGE_READWRITE);
 			if (Result.Contents)
 			{
 				DWORD BytesRead;
@@ -658,8 +684,8 @@ read_file_result ReadEntireFile(char *FileName)
 				{
 					Result.Contents = 0;
 				}
-				CloseHandle(FileHandle);
 			}
+			CloseHandle(FileHandle);
 		}
 	}
 
@@ -716,6 +742,7 @@ int LoadGLTextures()
 	memset(TextureImage, 0, sizeof(void *)*1);
 
 	// load bitmap
+	// TODO(nick): get proper glass.bmp or create one
 	if (TextureImage[0] = LoadBMP("../Data/cube.bmp"))
 	{
 		Status = TRUE;
