@@ -563,7 +563,7 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 					else
 					{
 						glDisable(GL_BLEND);
-						glDisable(GL_DEPTH_TEST);
+						glEnable(GL_DEPTH_TEST);
 					}
 				}
 
@@ -602,8 +602,6 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 					}
 				}
 
-				glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 				if (!keys['F'])
 				{
 					FKeyPress = FALSE;
@@ -743,7 +741,7 @@ int LoadGLTextures()
 
 	// load bitmap
 	// TODO(nick): get proper glass.bmp or create one
-	if (TextureImage[0] = LoadBMP("../Data/cube.bmp"))
+	if (TextureImage[0] = LoadBMP("../Data/glass.bmp"))
 	{
 		Status = TRUE;
 
