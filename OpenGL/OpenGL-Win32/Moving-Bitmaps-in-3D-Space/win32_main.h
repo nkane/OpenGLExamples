@@ -15,6 +15,15 @@ struct loaded_bitmap
 	unsigned int *Pixels;
 };
 
+typedef struct star
+{
+	int Red;
+	int Green;
+	int Blue;
+	GLfloat Distance;
+	GLfloat Angle;
+} star;
+
 LRESULT CALLBACK WndProc(HWND windowHandle, UINT Message, WPARAM wParam, LPARAM lParam);
 
 GLvoid ResizeGLScene(GLsizei width, GLsizei height);

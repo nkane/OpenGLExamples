@@ -22,12 +22,10 @@ global_variable bool keys[256];
 global_variable bool active = true;
 global_variable bool fullscreen = true;
 
-global_variable bool Light = false;
+global_variable bool Twinkle = false;
 global_variable bool Blend = false;
 
-global_variable bool LKeyPress = false;
-global_variable bool FKeyPress = false;
-global_variable bool BKeyPress = false;
+global_variable bool TKeyPress = false;
 
 global_variable GLfloat x_rotation;
 global_variable GLfloat y_rotation;
@@ -35,12 +33,18 @@ global_variable GLfloat x_speed;
 global_variable GLfloat y_speed;
 global_variable GLfloat z = (-5.0f);
 
-GLfloat AmbientLight[] =  { 0.5f, 0.5f, 0.5f, 1.0f, };
-GLfloat DiffuseLight[] =  { 1.0f, 1.0f, 1.0f, 1.0f, };
-GLfloat LightPosition[] = { 0.0f, 0.0f, 2.0f, 1.0f, };
+global_variable GLfloat Zoom = (-15.0f);
+global_variable GLfloat Tilt = 90.0f;
+global_variable GLfloat Spin = 0.0f;
 
-GLuint Filter;
-GLuint Textures[3];
+global_variable GLuint Filter;
+
+global_variable GLuint Loop = 0;
+global_variable GLuint Textures[1];
+
+
+global_variable const int Size = 50;
+global_variable star Stars[Size] = { 0 };
 
 GLvoid ResizeGLScene(GLsizei width, GLsizei height)
 {
@@ -73,19 +77,18 @@ int InitGL(GLvoid)
 	glShadeModel(GL_SMOOTH);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
 	glClearDepth(1.0f);
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-	
-	// set up ambient light
-	glLightfv(GL_LIGHT1, GL_AMBIENT, AmbientLight);
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, DiffuseLight);
-	glLightfv(GL_LIGHT1, GL_POSITION, LightPosition);
-
-	glEnable(GL_LIGHT1); 
-
-	glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	glEnable(GL_BLEND);
+
+	for (Loop = 0; Loop < Size; ++Loop)
+	{
+		Stars[Loop].Angle = 0.0f;
+		Stars[Loop].Distance = (((float)Loop) / Size) * 5.0f;
+		Stars[Loop].Red	  = (rand() % 256);
+		Stars[Loop].Green = (rand() % 256);
+		Stars[Loop].Blue  = (rand() % 256);
+	}
 
 	return TRUE;
 }
@@ -93,104 +96,47 @@ int InitGL(GLvoid)
 int DrawGLScene(GLvoid)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glLoadIdentity();
+	glBindTexture(GL_TEXTURE_2D, Textures[0]);
+	int currentIndex = 0;
 
-	glTranslatef(0.0f, 0.0f, z);
-	glRotatef(x_rotation, 1.0f, 0.0f, 0.0f);
-	glRotatef(y_rotation, 0.0f, 1.0f, 0.0f);
-
-	glBindTexture(GL_TEXTURE_2D, Textures[Filter]); 
-	glBegin(GL_QUADS);
+	for (Loop = 0; Loop < Size; ++Loop)
 	{
-		// front face
-		glNormal3f( 0.0f, 0.0f, 1.0f );
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex3f( -1.0f, -1.0f, 1.0f );
+		glLoadIdentity();
+		glTranslatef(0.0f, 0.0f, Zoom);
+		glRotatef(Tilt, 1.0f, 0.0f, 0.0f);
+		glRotatef(Stars[Loop].Angle, 0.0f, 1.0f, 0.0f);
+		glTranslatef(Stars[Loop].Distance, 0.0f, 0.0f);
+		glRotatef((-1.0f * Stars[Loop].Angle), 0.0f, 1.0f, 0.0f);
+		glRotatef((-1.0f * Tilt), 1.0f, 0.0f, 0.0f);
 
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex3f( 1.0f, -1.0f, 1.0f );
+		currentIndex = ((Size - Loop) - 1);
+		if (Twinkle)
+		{
+			glColor4ub(Stars[currentIndex].Red, Stars[currentIndex].Green, Stars[currentIndex].Blue, 255);
+			glBegin(GL_QUADS);
+			{
+				glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f, 0.0f);
+				glTexCoord2f(1.0f, 0.0f); glVertex3f(1.0f, -1.0f, 0.0f);
+				glTexCoord2f(1.0f, 1.0f); glVertex3f(1.0f, 1.0f, 0.0f);
+				glTexCoord2f(-1.0f, 0.0f); glVertex3f(-1.0f, 1.0f, 0.0f);
+			}
+			glEnd();
 
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex3f( 1.0f, 1.0f, 1.0f );
+			Spin += 0.01f;
+			Stars[Loop].Angle += (((float)Loop) / Size);
+			Stars[Loop].Distance -= 0.01f;
 
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex3f( -1.0, 1.0f, 1.0f );
-
-		// back face
-		glNormal3f( 0.0f, 0.0f, -1.0f );
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex3f( -1.0f, -1.0f, -1.0f );
-
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex3f( -1.0f, 1.0f, -1.0f );
-
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex3f( 1.0f , 1.0f, -1.0f );
-
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex3f( 1.0f, -1.0f, -1.0f );
-
-		// top face
-		glNormal3f( 0.0f, 1.0f, 0.0f );
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex3f( -1.0f, 1.0f, -1.0f );
-
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex3f( -1.0f, 1.0f, 1.0f );
-
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex3f( 1.0f, 1.0f, 1.0f );
-
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex3f( 1.0f, 1.0f, -1.0f );
-		
-		// bottom face
-		glNormal3f( 1.0f, 0.0f, 0.0f );
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex3f( -1.0f, -1.0f, -1.0f );
-		
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex3f( 1.0f, -1.0f, -1.0f );
-
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex3f( 1.0f, -1.0f, 1.0f );
-
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex3f( -1.0f, -1.0f, 1.0f );
-		
-		// right face
-		glNormal3f( 1.0f, 0.0f, 0.0f );
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex3f( 1.0f, -1.0f, -1.0f );
-
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex3f( 1.0f, 1.0f, -1.0f );
-
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex3f( 1.0f, 1.0f, 1.0f );
-
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex3f( 1.0f, -1.0f, 1.0f );
-
-		// left face
-		glNormal3f( -1.0f, 0.0f, 0.0f );
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex3f( -1.0f, -1.0f, -1.0 );
-
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex3f( -1.0f, -1.0f , 1.0f );
-
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex3f( -1.0f, 1.0f, 1.0f );
-
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex3f( -1.0f, 1.0f, -1.0f );
+			if (Stars[Loop].Distance < 0.0f)
+			{
+				Stars[Loop].Distance += 5.0f;
+				Stars[Loop].Red	  = (rand() % 256);
+				Stars[Loop].Green = (rand() % 256);
+				Stars[Loop].Blue  = (rand() % 256);
+			}
+		}
 	}
-	glEnd();
 
-	x_rotation += x_speed;
-	y_rotation += y_speed;
-
+	
 	return TRUE;
 }
 
@@ -551,62 +497,6 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 					SwapBuffers(DeviceContextHandle);
 				}
 
-				if (keys['B'] && !BKeyPress)
-				{
-					BKeyPress = TRUE;
-					Blend = !Blend;
-					if (Blend)
-					{
-						glEnable(GL_BLEND);
-						glDisable(GL_DEPTH_TEST);
-					}
-					else
-					{
-						glDisable(GL_BLEND);
-						glEnable(GL_DEPTH_TEST);
-					}
-				}
-
-				if (!keys['B'])
-				{
-					BKeyPress = FALSE;
-				}
-
-				if (keys['L'] && !LKeyPress)
-				{
-					LKeyPress = TRUE;
-					Light = !Light;
-
-					if (!Light)
-					{
-						glDisable(GL_LIGHTING);
-					}
-					else
-					{
-						glEnable(GL_LIGHTING);
-					}
-				}
-
-				if (!keys['L'])
-				{
-					LKeyPress = FALSE;
-				}
-
-				if (keys['F'] && !FKeyPress)
-				{
-					FKeyPress = TRUE;
-					Filter += 1;
-					if (Filter > 2)
-					{
-						Filter = 0;
-					}
-				}
-
-				if (!keys['F'])
-				{
-					FKeyPress = FALSE;
-				}
-
 				// page up
 				if (!keys[VK_PRIOR])
 				{
@@ -736,42 +626,23 @@ int LoadGLTextures()
 {
 	int Status = FALSE;
 	loaded_bitmap *TextureImage[1];
-	// TODO(nick): not sure this is necessary
 	memset(TextureImage, 0, sizeof(void *)*1);
-
-	// load bitmap
-	// TODO(nick): get proper glass.bmp or create one
 	if (TextureImage[0] = LoadBMP("../Data/star.bmp"))
 	{
 		Status = TRUE;
 
-		// create three textures
-		glGenTextures(3, &Textures[0]);
+		glGenTextures(1, &Textures[0]);
 
-		// create nearest filter texture
 		glBindTexture(GL_TEXTURE_2D, Textures[0]);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TextureImage[0]->Width, TextureImage[0]->Height, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, TextureImage[0]->Pixels);
-
-		// create linear filtered texture
-		glBindTexture(GL_TEXTURE_2D, Textures[1]);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TextureImage[0]->Width, TextureImage[0]->Height, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, TextureImage[0]->Pixels);
-
-		// create mipmipped texture
-		glBindTexture(GL_TEXTURE_2D, Textures[2]);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-		gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA8, TextureImage[0]->Width, TextureImage[0]->Height, GL_BGRA_EXT, GL_UNSIGNED_BYTE, TextureImage[0]->Pixels);
-
+		
 		if (TextureImage[0])
 		{
 			VirtualFree(TextureImage[0], 0, MEM_RELEASE);
 		}
 	}
-
 	return Status;
 }
 
