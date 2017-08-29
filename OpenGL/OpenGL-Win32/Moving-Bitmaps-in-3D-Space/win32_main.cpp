@@ -27,21 +27,12 @@ global_variable bool Blend = false;
 
 global_variable bool TKeyPress = false;
 
-global_variable GLfloat x_rotation;
-global_variable GLfloat y_rotation;
-global_variable GLfloat x_speed;
-global_variable GLfloat y_speed;
-global_variable GLfloat z = (-5.0f);
-
 global_variable GLfloat Zoom = (-15.0f);
 global_variable GLfloat Tilt = 90.0f;
 global_variable GLfloat Spin = 0.0f;
 
-global_variable GLuint Filter;
-
 global_variable GLuint Loop = 0;
 global_variable GLuint Textures[1];
-
 
 global_variable const int Size = 50;
 global_variable star Stars[Size] = { 0 };
@@ -104,8 +95,10 @@ int DrawGLScene(GLvoid)
 		glLoadIdentity();
 		glTranslatef(0.0f, 0.0f, Zoom);
 		glRotatef(Tilt, 1.0f, 0.0f, 0.0f);
+
 		glRotatef(Stars[Loop].Angle, 0.0f, 1.0f, 0.0f);
 		glTranslatef(Stars[Loop].Distance, 0.0f, 0.0f);
+
 		glRotatef((-1.0f * Stars[Loop].Angle), 0.0f, 1.0f, 0.0f);
 		glRotatef((-1.0f * Tilt), 1.0f, 0.0f, 0.0f);
 
@@ -115,24 +108,35 @@ int DrawGLScene(GLvoid)
 			glColor4ub(Stars[currentIndex].Red, Stars[currentIndex].Green, Stars[currentIndex].Blue, 255);
 			glBegin(GL_QUADS);
 			{
-				glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f, 0.0f);
-				glTexCoord2f(1.0f, 0.0f); glVertex3f(1.0f, -1.0f, 0.0f);
-				glTexCoord2f(1.0f, 1.0f); glVertex3f(1.0f, 1.0f, 0.0f);
-				glTexCoord2f(-1.0f, 0.0f); glVertex3f(-1.0f, 1.0f, 0.0f);
+				glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f,-1.0f, 0.0f);
+				glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f,-1.0f, 0.0f);
+				glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f, 1.0f, 0.0f);
+				glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f, 1.0f, 0.0f);
 			}
 			glEnd();
+		}
 
-			Spin += 0.01f;
-			Stars[Loop].Angle += (((float)Loop) / Size);
-			Stars[Loop].Distance -= 0.01f;
+		glRotatef(Spin, 0.0f, 0.0f, 1.0f);
+		glColor4ub(Stars[Loop].Red, Stars[Loop].Green, Stars[Loop].Blue, 255);
+		glBegin(GL_QUADS);
+		{
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f,-1.0f, 0.0f);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f,-1.0f, 0.0f);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f, 1.0f, 0.0f);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f, 1.0f, 0.0f);
+		}
+		glEnd();
 
-			if (Stars[Loop].Distance < 0.0f)
-			{
-				Stars[Loop].Distance += 5.0f;
-				Stars[Loop].Red	  = (rand() % 256);
-				Stars[Loop].Green = (rand() % 256);
-				Stars[Loop].Blue  = (rand() % 256);
-			}
+		Spin += 0.01f;
+		Stars[Loop].Angle += (((float)Loop) / Size);
+		Stars[Loop].Distance -= 0.01f;
+
+		if (Stars[Loop].Distance < 0.0f)
+		{
+			Stars[Loop].Distance += 5.0f;
+			Stars[Loop].Red	  = (rand() % 256);
+			Stars[Loop].Green = (rand() % 256);
+			Stars[Loop].Blue  = (rand() % 256);
 		}
 	}
 
@@ -491,42 +495,41 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 				{
 					done = TRUE;
 				}
-				else 
+
+				DrawGLScene();
+				SwapBuffers(DeviceContextHandle);
+
+				if (!keys['T'])
 				{
-					DrawGLScene();
-					SwapBuffers(DeviceContextHandle);
+					TKeyPress = false;
+				}
+
+				if (keys['T'] && !TKeyPress)
+				{
+					TKeyPress = true;
+					Twinkle = !Twinkle;
 				}
 
 				// page up
 				if (!keys[VK_PRIOR])
 				{
-					z -= 0.02f;
+					Zoom -= 0.02f;
 				}
 
 				// page down
 				if (!keys[VK_NEXT])
 				{
-					z += 0.02f;
+					Zoom += 0.02f;
 				}
 
 				if (keys[VK_UP])
 				{
-					x_speed -= 0.01f;
+					Tilt -= 0.5f;
 				}
 
 				if (keys[VK_DOWN])
 				{
-					x_speed += 0.01f;
-				}
-
-				if (keys[VK_RIGHT])
-				{
-					y_speed += 0.01f;
-				}
-
-				if (keys[VK_LEFT])
-				{
-					y_speed -= 0.01f;
+					Tilt += 0.5f;
 				}
 
 				if (keys[VK_F1])
@@ -535,7 +538,7 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 					KillGLWindow();
 					fullscreen = !fullscreen;
 
-					if (!CreateGLWindow("Win32 OpenGL Boilerplate", 640, 480, 16, fullscreen))
+					if (!CreateGLWindow("Win32 OpenGL, Moving Bitmaps in 3D Space", 640, 480, 16, fullscreen))
 					{
 						return 0;
 					}
