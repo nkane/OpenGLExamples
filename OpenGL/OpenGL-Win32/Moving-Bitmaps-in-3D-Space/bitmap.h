@@ -1,3 +1,7 @@
+/*
+ * bitmap.h
+ */
+
 #pragma pack(push, 1)
 struct bitmap_header
 {
@@ -14,21 +18,21 @@ struct bitmap_header
 	unsigned int	   Compression;
 	unsigned int	   SizeOfBitmap;
 	int		   HorizontalResolution;
-	int		   VerticalResolution;
+	int		   VerticleResolution;
 	unsigned int	   ColorUsed;
-	unsigned int 	   ColorsImportant;
+	unsigned int	   ColorsImportant;
 
 	unsigned int	   RedMask;
 	unsigned int	   GreenMask;
 	unsigned int	   BlueMask;
-}
-#pragma pop(pop)
+};
+#pragma pack(pop)
 
 struct bit_scan_result
 {
-	bool 		Found;
-	unsigned int	Index;
-}
+	bool Found;
+	unsigned int Index;
+};
 
 inline bit_scan_result
 FindLeastSignificantSetBit(unsigned int value)
@@ -50,6 +54,7 @@ FindLeastSignificantSetBit(unsigned int value)
 		}
 	}
 	*/
-	
+
 	return Result;
 }
+

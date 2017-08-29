@@ -4,15 +4,15 @@
 
 typedef struct read_file_result
 {
-	unsigned int	ContentSize;
-	void 		*Contents;
+	unsigned int ContentsSize;
+	void *Contents;
 } read_file_result;
 
 struct loaded_bitmap
 {
-	int 		Width;
-	int 		Height;
-	unsigned int	*Pixel;
+	int Width;
+	int Height;
+	unsigned int *Pixels;
 };
 
 LRESULT CALLBACK WndProc(HWND windowHandle, UINT Message, WPARAM wParam, LPARAM lParam);
