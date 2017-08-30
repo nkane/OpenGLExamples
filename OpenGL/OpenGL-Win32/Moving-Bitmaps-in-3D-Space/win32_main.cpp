@@ -140,7 +140,6 @@ int DrawGLScene(GLvoid)
 		}
 	}
 
-	
 	return TRUE;
 }
 
@@ -513,13 +512,13 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 				// page up
 				if (!keys[VK_PRIOR])
 				{
-					Zoom -= 0.02f;
+					Zoom -= 0.2f;
 				}
 
 				// page down
 				if (!keys[VK_NEXT])
 				{
-					Zoom += 0.02f;
+					Zoom += 0.2f;
 				}
 
 				if (keys[VK_UP])
