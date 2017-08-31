@@ -64,11 +64,50 @@ float Rad(float angle)
 	return angle * PiOver180;
 }
 
+int ReadNumberOfPolygons(char *lineBuffer, int startPosition)
+{
+	int result = 0;
+	int endPosition = startPosition;
+	int temp = 0;
+	int numberPosition = 1;
+	while (*(lineBuffer + endPosition) != '\0')
+	{
+		++endPosition;
+	}
+	--endPosition;
+	while (endPosition != (startPosition - 1))
+	{
+		temp = *(lineBuffer + endPosition) - '0';
+		temp *= numberPosition;
+		result += temp;
+		numberPosition *= 10;
+		--endPosition;
+	}
+
+	return result;
+}
+
 // TODO(nick): figure how to convert this to win32
 void ReadString(char *lineBuffer, int size)
 {
-
+	int i = 0;
+	int numberTriangles = 0;
+	// specific code to get NOMPOLLIES
+	if (*(lineBuffer + i) == 'N')
+	{
+		while (*(lineBuffer + i++) != ' ');
+		numberTriangles = ReadNumberOfPolygons(lineBuffer, i);
+	}
+	else
+	{
+		while (i < (size - 1) && *(lineBuffer + i) != '\n')
+		{
+			// TODO(nick)
+			++i;
+		}
+	}
 }
+
 
 // TODO(nick): figure how to convert this to win32
 void SetupWorld()

@@ -1,5 +1,5 @@
 /*
- *  Created By: Nick Kane
+ *	win32_main.cpp
  */
 
 #include <windows.h>
