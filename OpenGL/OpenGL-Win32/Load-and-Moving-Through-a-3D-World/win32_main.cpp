@@ -10,6 +10,12 @@
 #include "bitmap.h"
 #include "model.h"
 
+// TODO(nick): remove these whenever alternative is created
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #define global_variable 	static
 #define local_persist 		static
 #define internal 		static
@@ -32,11 +38,16 @@ global_variable bool FKeyPress = false;
 
 global_variable GLfloat WalkBias 	= 0.0f;
 global_variable GLfloat WalkBiasAngle 	= 0.0f;
-global_variable GLfloat LoopUpdown	= 0.0f;
+global_variable GLfloat LookUpdown	= 0.0f;
 
 global_variable const float PiOver180 = 0.0174532925f;
 
-global_variable float Head = 0.0f;
+global_variable GLfloat X_Rotation = 0.0f;
+global_variable GLfloat Y_Rotation = 0.0f;
+global_variable GLfloat X_Speed = 0.0f;
+global_variable GLfloat Y_Speed = 0.0f;
+
+global_variable float Heading = 0.0f;
 global_variable float X_Position = 0.0f;
 global_variable float Z_Position = 0.0f;
 
@@ -64,6 +75,46 @@ float Rad(float angle)
 	return angle * PiOver180;
 }
 
+void readstr(FILE *f, char *string)
+{
+	do
+	{
+		fgets(string, 255, f);
+	} while((string[0] == '/') || (string[0] == '\n'));
+}
+
+void SetupWorld()
+{
+	float x, y, z, u, v;
+	int numberTriangles;
+	FILE *file;
+	char stringBuffer[255];
+
+	file = fopen("../Data/world.txt", "rt");
+	
+	readstr(file, stringBuffer);
+	sscanf(stringBuffer, "NUMPOLLIES %d\n", &numberTriangles);
+
+	Sector.Triangle = (TRIANGLE *)VirtualAlloc(0, (((unsigned int)sizeof(TRIANGLE)) * numberTriangles), (MEM_RESERVE | MEM_COMMIT), PAGE_READWRITE);
+	Sector.NumberTriangles = numberTriangles;
+	for (int loop = 0; loop < numberTriangles; ++loop)
+	{
+		for (int vert = 0; vert < 3; ++vert)
+		{
+			readstr(file, stringBuffer);
+			sscanf(stringBuffer, "%f %f %f %f %f", &x, &y, &z, &u, &v);
+			Sector.Triangle[loop].Vertex[vert].X = x;
+			Sector.Triangle[loop].Vertex[vert].Y = y;
+			Sector.Triangle[loop].Vertex[vert].Z = z;
+			Sector.Triangle[loop].Vertex[vert].U = u;
+			Sector.Triangle[loop].Vertex[vert].V = v;
+		}
+	}
+	fclose(file);
+}
+
+// TODO(nick): finish up a better win32 solution
+/*
 int ReadNumberOfPolygons(char *lineBuffer, int startPosition)
 {
 	int result = 0;
@@ -87,39 +138,42 @@ int ReadNumberOfPolygons(char *lineBuffer, int startPosition)
 	return result;
 }
 
+void Read3DCoordinate(SECTOR *sectors, char *lineBuffer, int matrixIndex)
+{
+
+}
+
 // TODO(nick): figure how to convert this to win32
 void ReadString(char *lineBuffer, int size)
 {
 	int i = 0;
-	int numberTriangles = 0;
 	// specific code to get NOMPOLLIES
 	if (*(lineBuffer + i) == 'N')
 	{
 		while (*(lineBuffer + i++) != ' ');
-		numberTriangles = ReadNumberOfPolygons(lineBuffer, i);
+		NumberTriangles = ReadNumberOfPolygons(lineBuffer, i);
 	}
-	else
+	else if (*(lineBuffer + i) != '/')
 	{
 		while (i < (size - 1) && *(lineBuffer + i) != '\n')
 		{
-			// TODO(nick)
+			// TODO(nick): read 3D coordinate
+			Read3DCoordinate(&Sector, linBuffer, );
 			++i;
 		}
 	}
 }
 
-
-// TODO(nick): figure how to convert this to win32
+// NOTE(nick): definitely revisit this - I would still like to avoid using the standard library for 
+// parsing, but this solution is terrible
 void SetupWorld()
 {
-	float x, y, z, u, v;
-	int numberTrinagles;
-
+	//float x, y, z, u, v;
+	//int numberTriangles;
 	read_file_result ReadResult = ReadEntireFile("../Data/world.txt");
+	Sector.Triangle = (Triange *)VirtualAlloc(0, ((unsigned int)sizeof(TRIANGE)  * NumberTriangles), (MEM_RESERVE | MEM_COMMIT), PAGE_READWRITE);
 	if (ReadResult.ContentsSize != 0)
 	{
-		// TODO(nick): create a string buffer
-		// should store each line of text
 		char c;
 		int currentBufferIndex = 0;
 		for (int i = 0; i < ReadResult.ContentsSize ; ++i)
@@ -142,6 +196,7 @@ void SetupWorld()
 		}
 	}
 }
+*/
 
 GLvoid ResizeGLScene(GLsizei width, GLsizei height)
 {
@@ -168,23 +223,79 @@ int InitGL(GLvoid)
 	if (!LoadGLTextures())
 	{
 		return FALSE;
-	}
+	} 
 
 	glEnable(GL_TEXTURE_2D);
-	glShadeModel(GL_SMOOTH);
-	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
-	glClearDepth(1.0f);
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-	glEnable(GL_BLEND);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClearDepth(1.0f);
+
+	glDepthFunc(GL_LESS);
+	glEnable(GL_DEPTH_TEST);
+	glShadeModel(GL_SMOOTH);
+	
+	glLightfv(GL_LIGHT1, GL_AMBIENT, LightAmbient);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, LightDiffuse);
+	glLightfv(GL_LIGHT1, GL_POSITION, LightPosition);
+	glEnable(GL_LIGHT1);
 	
 	return TRUE;
 }
 
 int DrawGLScene(GLvoid)
 {
+	GLfloat xMatrix, yMatrix, zMatrix, uMatrix, vMatrix;
+	GLfloat xTransform = -(X_Position);
+	GLfloat zTransform = -(Z_Position);
+	GLfloat yTransform = -WalkBias - 0.25f;
+	GLfloat sceneRotateY = 360.0f - Y_Rotation;
+
+	int numberTriangles = 0;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glBindTexture(GL_TEXTURE_2D, Textures[0]);
+	glLoadIdentity();
+
+	glRotatef(LookUpdown, 1.0f, 0.0f, 0.0f);
+	glRotatef(sceneRotateY, 0.0f, 1.0f, 0.0f);
+
+	glTranslatef(xTransform, yTransform, zTransform);
+
+	glBindTexture(GL_TEXTURE_2D, Textures[Filter]);
+	
+	numberTriangles = Sector.NumberTriangles;
+
+	for (int loop_m = 0; loop_m < numberTriangles; ++loop_m)
+	{
+		glBegin(GL_TRIANGLES);
+		{
+			glNormal3f( 0.0f, 0.0f, 1.0f );
+			xMatrix = Sector.Triangle[loop_m].Vertex[0].X;
+			yMatrix = Sector.Triangle[loop_m].Vertex[0].Y;
+			zMatrix = Sector.Triangle[loop_m].Vertex[0].Z;
+			uMatrix = Sector.Triangle[loop_m].Vertex[0].U;
+			vMatrix = Sector.Triangle[loop_m].Vertex[0].V;
+			glTexCoord2f(uMatrix, vMatrix);
+			glVertex3f(xMatrix, yMatrix, zMatrix);
+
+			xMatrix = Sector.Triangle[loop_m].Vertex[1].X;
+			yMatrix = Sector.Triangle[loop_m].Vertex[1].Y;
+			zMatrix = Sector.Triangle[loop_m].Vertex[1].Z;
+			uMatrix = Sector.Triangle[loop_m].Vertex[1].U;
+			vMatrix = Sector.Triangle[loop_m].Vertex[1].V;
+			glTexCoord2f(uMatrix, vMatrix);
+			glVertex3f(xMatrix, yMatrix, zMatrix);
+
+			xMatrix = Sector.Triangle[loop_m].Vertex[2].X;
+			yMatrix = Sector.Triangle[loop_m].Vertex[2].Y;
+			zMatrix = Sector.Triangle[loop_m].Vertex[2].Z;
+			uMatrix = Sector.Triangle[loop_m].Vertex[2].U;
+			vMatrix = Sector.Triangle[loop_m].Vertex[2].V;
+			glTexCoord2f(uMatrix, vMatrix);
+			glVertex3f(xMatrix, yMatrix, zMatrix);
+		}
+		glEnd();
+	}
+
 	return TRUE;
 }
 
@@ -544,27 +655,122 @@ int WINAPI WinMain(HINSTANCE instanceHandle,
 
 				DrawGLScene();
 				SwapBuffers(DeviceContextHandle);
-				
-				// page up
-				if (!keys[VK_PRIOR])
-				{
 
+				if (keys['B'] && !BKeyPress)
+				{
+					BKeyPress = true;
+					Blend = !Blend;
+					if (!Blend)
+					{
+						glDisable(GL_BLEND);
+						glEnable(GL_DEPTH_TEST);
+					}
+					else
+					{
+						glEnable(GL_BLEND);
+						glDisable(GL_DEPTH_TEST);
+					}
 				}
 
-				// page down
-				if (!keys[VK_NEXT])
+				if (!keys['B'])
 				{
+					BKeyPress = false;
+				}
 
+				if (keys['F'] && !FKeyPress)
+				{
+					FKeyPress = true;
+					Filter += 1;
+					if (Filter > 2)
+					{
+						Filter = 0;
+					}
+				}
+
+				if (!keys['F'])
+				{
+					FKeyPress = false;
+				}
+
+				if (keys['L'] && !LKeyPress)
+				{
+					LKeyPress = true;
+					Light = !Light;
+					if (!Light)
+					{
+						glDisable(GL_LIGHTING);
+					}
+					else
+					{
+						glEnable(GL_LIGHTING);
+					}
+				}
+
+				if (!keys['L'])
+				{
+					LKeyPress = false;
+				}
+
+				if (keys[VK_PRIOR])
+				{
+					Z -= 0.02f;
+				}
+
+				if (keys[VK_NEXT])
+				{
+					Z += 0.02f;
 				}
 
 				if (keys[VK_UP])
 				{
-
+					X_Position -= (float)sin(Heading * PiOver180) * 0.05f;
+					Z_Position -= (float)cos(Heading * PiOver180) * 0.05f;
+					if (WalkBiasAngle >= 359.0f)
+					{
+						WalkBiasAngle = 0.0f;
+					}
+					else
+					{
+						WalkBiasAngle += 10;
+					}
+					WalkBias = (float)sin(WalkBiasAngle * PiOver180) / 20.0f; 
 				}
 
 				if (keys[VK_DOWN])
 				{
+					X_Position += (float)sin(Heading * PiOver180) * 0.05f;
+					Z_Position += (float)cos(Heading * PiOver180) * 0.05f;
+					if (WalkBiasAngle <= 1.0f)
+					{
+						WalkBiasAngle = 359.0f;
+					}
+					else
+					{
+						WalkBiasAngle -= 10;
+					}
+					WalkBias = (float)sin(WalkBiasAngle * PiOver180) / 20.0f; 
+				}
 
+				if (keys[VK_RIGHT])
+				{
+					Heading -= 1.0f;
+					Y_Rotation = Heading;
+				}
+
+				if (keys[VK_LEFT])
+				{
+					Heading += 1.0f;
+					Y_Rotation = Heading;
+				}
+
+				if (keys[VK_PRIOR])
+				{
+					LookUpdown -= 1.0f;
+				}
+
+				if (keys[VK_NEXT])
+				{
+					LookUpdown += 1.0f;
 				}
 
 				if (keys[VK_F1])
@@ -669,12 +875,25 @@ int LoadGLTextures()
 	{
 		Status = TRUE;
 
-		glGenTextures(1, &Textures[0]);
+		glGenTextures(3, &Textures[0]);
 
+		// create nearest filter texture
 		glBindTexture(GL_TEXTURE_2D, Textures[0]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TextureImage[0]->Width, TextureImage[0]->Height, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, TextureImage[0]->Pixels);
+
+		// create linear filter texture
+		glBindTexture(GL_TEXTURE_2D, Textures[1]);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TextureImage[0]->Width, TextureImage[0]->Height, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, TextureImage[0]->Pixels);
+
+		// create mipmapped texture
+		glBindTexture(GL_TEXTURE_2D, Textures[2]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+		gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA8, TextureImage[0]->Width, TextureImage[0]->Height, GL_BGRA_EXT, GL_UNSIGNED_BYTE, TextureImage[0]->Pixels);
 		
 		if (TextureImage[0])
 		{

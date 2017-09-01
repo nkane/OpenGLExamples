@@ -13,7 +13,7 @@ typedef struct tagVERTEX
 
 typedef struct tagTRIANGLE
 {
-	VERTEX vertex[3];
+	VERTEX Vertex[3];
 } TRIANGLE;
 
 typedef struct tagSECTOR
