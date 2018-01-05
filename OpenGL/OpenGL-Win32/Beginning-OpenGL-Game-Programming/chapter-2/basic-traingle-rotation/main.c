@@ -10,10 +10,10 @@
 #define local_persist		static
 
 global_variable BOOL GlobalExiting = FALSE;
+global_variable BOOL GlobalFullscreen = FALSE;
 global_variable long GlobalWindowWidth = 800;
 global_variable long GlobalWindowHeight = 600;
 global_variable long GlobalWindowBits = 32;
-global_variable BOOL GlobalFullscreen = FALSE;
 global_variable HDC GlobalHdc;
 global_variable float GlobalOpenGLAngle = 0.0f;
 
@@ -45,7 +45,7 @@ OpenGLRender(float angle)
     // clear screen and depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
-    // move back 5 units and rotate and all 3 axes
+    // move back 5 units and rotate all 3 axes
     glTranslatef(0.0f, 0.0f, -5.0f);
     glRotatef(angle, 1.0f, 0.0f, 0.0f);
     glRotatef(angle, 0.0f, 1.0f, 0.0f);
@@ -110,7 +110,6 @@ MainWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			hdc = GetDC(hwnd);
 			SetupPixelFormat(hdc);
-			//SetupPalette();
 			hrc = wglCreateContext(hdc);
 			wglMakeCurrent(hdc, hrc);
 		} break;
@@ -128,7 +127,7 @@ MainWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			height = HIWORD(lParam);
 			width = LOWORD(lParam);
-            OpenGLSetupProjection(height, width);
+            OpenGLSetupProjection(width, height);
             GlobalWindowWidth = width;
             GlobalWindowHeight = height;
 		} break;
