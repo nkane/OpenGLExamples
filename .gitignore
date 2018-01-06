@@ -4,6 +4,10 @@
 *.o
 *.obj
 
+# Linker files
+*.ilk
+
+
 # Precompiled Headers
 *.gch
 *.pch
@@ -41,3 +45,6 @@ Session.vim
 .netrwhist
 *~
 tags
+
+# Build Folder
+./build
